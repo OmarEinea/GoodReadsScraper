@@ -1,0 +1,9 @@
+#
+# Igonre all interpreted python byte code
+#
+*.pyc
+
+#
+# Ignore PyCharm IDE project folder
+#
+.idea
