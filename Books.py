@@ -1,23 +1,16 @@
 #!/usr/bin/env python
 
 # import needed libraries
-import mechanize
+from Browser import GoodReadsBrowser
 
 
 # A class to Search then Scrape lists and books from GoodReads.com
-class SearchBooks:
+class Books:
+    keyword = None
+
     def __init__(self, keyword=None):
-        self.site_url = "https://www.goodreads.com"
-        self.keyword = None
+        self.br = GoodReadsBrowser()
         self.set_keyword(keyword)
-        # Instantiate mechanize browser
-        self.br = mechanize.Browser()
-        # Browser options
-        self.br.set_handle_equiv(True)
-        self.br.set_handle_robots(False)
-        self.br.set_handle_redirect(True)
-        self.br.set_handle_referer(True)
-        self.br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
         # An array for scrapped lists and books
         self.lists = set()
         self.books = set()
@@ -48,11 +41,11 @@ class SearchBooks:
         # Loop through all lists
         for list_id in self.get_lists():
             # Open each list url
-            self.br.open(self.site_url + "/list/show/" + list_id)
+            self.br.open_list(list_id)
             # Scrape pages until there's no next page
             while True:
                 self.__scrape_list("^/book/show/", self.books)
-                if not self.__has_next_page("Next"):
+                if not self.br.has_next_page("Next"):
                     break
         return self.books
 
@@ -62,27 +55,17 @@ class SearchBooks:
         if self.lists != set():
             return self.lists
         # Open GoodReads' lists search url
-        self.br.open(self.site_url + "/search?search_type=lists&q=" + self.keyword)
+        self.br.open_list_search(self.keyword)
         # Scrape all result pages
         while True:
             self.__scrape_list("^/list/", self.lists)
-            if not self.__has_next_page("next"):
+            if not self.br.has_next_page("next"):
                 break
         return self.lists
 
     # Keyword setter
     def set_keyword(self, keyword):
         self.keyword = str(keyword).replace(' ', '+')
-
-    # Check if there's a next page and enter it
-    def __has_next_page(self, text):
-        # Try to enter next page
-        try:
-            self.br.follow_link(self.br.find_link(text_regex=text))
-        # Return false if there's no next, otherwise return true
-        except mechanize._mechanize.LinkNotFoundError:
-            return False
-        return True
 
     # Scrape a single search results page
     def __scrape_list(self, sub_url, array):
