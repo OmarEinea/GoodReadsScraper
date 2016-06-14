@@ -7,3 +7,9 @@
 # Ignore PyCharm IDE project folder
 #
 .idea
+
+#
+# Ignore PhantomJS Driver and Log files
+#
+phantomjs
+ghostdriver.log

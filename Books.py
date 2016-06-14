@@ -20,7 +20,7 @@ class Books:
         books = open(file_name, 'w')
         # Loop through book ids and write them
         for book_id in self.get_books():
-            print >> books, book_id
+            books.write(book_id + '\n')
         books.close()
 
     # Read already scraped books to the array
@@ -29,7 +29,7 @@ class Books:
         # Loop through all books ids from file
         for book_id in books:
             # Add book id to array without new line
-            self.books.add(book_id.translate(None, '\n'))
+            self.books.add(book_id.replace('\n', ''))
         books.close()
         return self.books
 
@@ -44,8 +44,10 @@ class Books:
             self.br.open_list(list_id)
             # Scrape pages until there's no next page
             while True:
-                self.__scrape_list("^/book/show/", self.books)
-                if not self.br.has_next_page("Next"):
+                self.__scrape_list("book", self.books)
+                if self.br.has_next_page():
+                    self.br.goto_next_page()
+                else:
                     break
         return self.books
 
@@ -58,8 +60,10 @@ class Books:
         self.br.open_list_search(self.keyword)
         # Scrape all result pages
         while True:
-            self.__scrape_list("^/list/", self.lists)
-            if not self.br.has_next_page("next"):
+            self.__scrape_list("list", self.lists)
+            if self.br.has_next_page():
+                self.br.goto_next_page()
+            else:
                 break
         return self.lists
 
@@ -68,8 +72,9 @@ class Books:
         self.keyword = str(keyword).replace(' ', '+')
 
     # Scrape a single search results page
-    def __scrape_list(self, sub_url, array):
+    def __scrape_list(self, title, array):
         # Loop through all link that start with sub_url
-        for link in self.br.links(url_regex=sub_url):
+        for link in self.br.links(title):
             # Extract and store unique id from link
-            array.add(link.url[11:].split('.')[0].split('-')[0])
+            array.add(link.get_attribute("href")[36:].split('.')[0].split('-')[0])
+            print(title + ' ' + str(len(array)))
