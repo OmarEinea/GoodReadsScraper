@@ -25,10 +25,12 @@ class Writer:
             # If file starts with digit (so not with C_ or E_)
             if file[0].isdigit():
                 # Then program was interrupted, delete file
-                os.remove(file)
+                os.remove(self.path + file)
             else:
                 # Otherwise, remove it from array
-                array.discard(file[2:-4])
+                try:
+                    array.remove(file[2:-4])
+                except: pass
 
     # General shortcut to open a file for writing
     def open(self, file, key='w', path="./"):
@@ -59,20 +61,23 @@ class Writer:
         # If no reviews were added
         if length == 0:
             # Rename as an empty file
-            os.rename(self.path + self.file.name, self.path + "E_" + self.file.name)
+            os.rename(self.file.name, self.path + "E_" + self.file.name.split(self.path)[1])
         else:
             # Otherwise, rename as a complete file
-            os.rename(self.path + self.file.name, self.path + "C_" + self.file.name)
+            os.rename(self.file.name, self.path + "C_" + self.file.name.split(self.path)[1])
         self.close()
 
     # Read already scraped books to the array
-    def read_books(self, file_name = "books"):
-        self.open(file_name, 'r')
+    def read_books(self, file_name="books"):
         books = []
-        # Loop through all books ids from file
-        for book_id in self.file:
-            # Add book id to array without new line
-            books.append(book_id.replace('\n', ''))
-        self.close()
+        if os.path.exists("./" + file_name + self.format):
+            self.open(file_name, 'r')
+            # Loop through all books ids from file
+            for book_id in self.file:
+                # Add book id to array without new line
+                books.append(book_id.replace('\n', ''))
+            self.close()
+        else:
+            print("Can't find file to read from!")
         return books
 

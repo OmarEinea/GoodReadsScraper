@@ -3,7 +3,7 @@
 # import needed libraries
 from bs4 import BeautifulSoup
 from langdetect import detect
-from Browser import GoodReadsBrowser
+from Browser import Browser
 from Writer import Writer
 import time
 
@@ -11,7 +11,8 @@ import time
 # A class to Scrape books Reviews from GoodReads.com
 class Reviews:
     def __init__(self):
-        self.br = GoodReadsBrowser()
+        # Browsing and writing managers
+        self.br = Browser()
         self.wr = Writer()
         self.ids = []
         # Counter for time of reloading a page
@@ -20,26 +21,28 @@ class Reviews:
         self.diff_lang = 0
 
     # Scrape and write books' reviews to separate files
-    def write_books_reviews(self, books_ids, consider_previous=True):
+    def output_books_reviews(self, books_ids, consider_previous=True):
         if consider_previous:
             # Don't loop through already scraped books
             self.wr.consider_written_files(books_ids)
         # Loop through book ids in array and scrape books
         for book_id in books_ids:
             print("Scraping book: " + book_id)
-            self.write_book_reviews(book_id)
+            self.output_book_reviews(book_id)
 
     # Scrape and write one book's reviews to a file
-    def write_book_reviews(self, book_id):
+    def output_book_reviews(self, book_id):
         # Open book page and file by Id
-        self.br.open_book(book_id)
+        self.br.open_book_page(book_id)
         self.wr.open_book_file(book_id)
         # Scrape as many reviews as possible
         while True:
             # Scrape book page and return whether it loaded
-            if not self._scrape_book(self.br.page_source):
+            if not self._process_book(self.br.page_source):
                 # Refresh if page didn't load for five seconds
+                print("Waiting")
                 if self.reload > 5:
+                    print("Refreshing")
                     self.br.refresh()
                     self.reload = 0
                 # Wait one second for page to load
@@ -55,8 +58,8 @@ class Reviews:
         # Empty ids array
         self.ids.clear()
 
-    # Scrape a single page's reviews
-    def _scrape_book(self, html):
+    # Check for possible errors then scrape book
+    def _process_book(self, html):
         # Store reviews section of the page in soup
         soup = BeautifulSoup(html, "lxml").find(id="bookReviews")
         # Check if page has loaded
@@ -72,8 +75,14 @@ class Reviews:
         # Invest time and go to next page from now
         if self.br.has_next_page():
             self.br.goto_next_page()
+        # Good to go, start scraping book
+        self._scrape_book(zip(soup.find_all(class_="bodycol"), temp_ids))
+        return True
+
+    # Scrape a single page's reviews
+    def _scrape_book(self, reviews):
         # Loop through reviews individually
-        for review, i in zip(soup.find_all(class_="bodycol"), temp_ids):
+        for review, i in reviews:
             # Hold rating and text part of a review
             rating = review.find(class_="staticStars")
             readable = review.find(class_="readable")
@@ -97,7 +106,6 @@ class Reviews:
             # Notify and add review id to ids
             self.ids.append(i)
             print("Added ID:" + i)
-        return True
 
     # Switch reviews ratings to stars from 1 to 5
     SWITCH = {"it was amazing": 5, "really liked it": 4, "liked it": 3, "it was ok": 2, "did not like it": 1}

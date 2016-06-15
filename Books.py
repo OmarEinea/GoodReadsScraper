@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # import needed libraries
-from Browser import GoodReadsBrowser
+from Browser import Browser
 from Writer import Writer
 
 
@@ -10,7 +10,8 @@ class Books:
     keyword = None
 
     def __init__(self, keyword=None):
-        self.br = GoodReadsBrowser()
+        # Browsing and writing managers
+        self.br = Browser()
         self.wr = Writer()
         self.set_keyword(keyword)
         # An array for scrapped lists and books
@@ -18,7 +19,7 @@ class Books:
         self.books = set()
 
     # Scrape books and write them to a file
-    def write_books(self, file_name="books"):
+    def output_books(self, file_name="books"):
         self.wr.open(file_name)
         # Loop through book ids and write them
         for book_id in self.get_books():
@@ -33,7 +34,7 @@ class Books:
         # Loop through all lists
         for list_id in self.get_lists():
             # Open each list url
-            self.br.open_list(list_id)
+            self.br.open_list_page(list_id)
             # Scrape pages until there's no next page
             while True:
                 self.__scrape_list("book", self.books)

@@ -6,7 +6,7 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 
 # A GoodReads specific PhantomJS browser class
-class GoodReadsBrowser(PhantomJS):
+class Browser(PhantomJS):
     def __init__(self):
         # Call super class constructor
         PhantomJS.__init__(self, "./phantomjs")
@@ -19,20 +19,21 @@ class GoodReadsBrowser(PhantomJS):
             try:
                 self.get("https://www.goodreads.com" + sub_url + str(keyword) + options)
             except TimeoutException:
+                print("Reloading page")
                 continue
             break
 
     # Shortcut to open GoodReads book page
-    def open_book(self, book_id):
+    def open_book_page(self, book_id):
         self.open("/book/show/", book_id, "?text_only=true&sort=newest")
 
     # Shortcut to open GoodReads books list
-    def open_list(self, list_id):
+    def open_list_page(self, list_id):
         self.open("/list/show/", list_id)
 
     # Shortcut to open a GoodReads search page for books lists
     def open_list_search(self, keyword):
-        self.open("/search?search_type=lists&q=", keyword)
+        self.open("/search?q=", keyword, "&search_type=lists")
 
     # Check if there's a next page
     def has_next_page(self):
