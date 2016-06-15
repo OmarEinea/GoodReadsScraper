@@ -2,7 +2,7 @@
 
 # import needed libraries
 from selenium.webdriver import PhantomJS
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 
 # A GoodReads specific PhantomJS browser class
@@ -10,15 +10,21 @@ class GoodReadsBrowser(PhantomJS):
     def __init__(self):
         # Call super class constructor
         PhantomJS.__init__(self, "./phantomjs")
+        self.set_page_load_timeout(30)
         self.next_page = None
 
     # General shortcut to open a GoodReads page
-    def open(self, sub_url, keyword):
-        self.get("https://www.goodreads.com" + sub_url + str(keyword))
+    def open(self, sub_url, keyword, options=''):
+        while True:
+            try:
+                self.get("https://www.goodreads.com" + sub_url + str(keyword) + options)
+            except TimeoutException:
+                continue
+            break
 
     # Shortcut to open GoodReads book page
     def open_book(self, book_id):
-        self.open("/book/show/", book_id)
+        self.open("/book/show/", book_id, "?text_only=true&sort=newest")
 
     # Shortcut to open GoodReads books list
     def open_list(self, list_id):
@@ -40,12 +46,10 @@ class GoodReadsBrowser(PhantomJS):
         return self.next_page.tag_name == 'a'
 
     # Click the next button to go to next page
-    def goto_next_page(self, repeated=False):
-        # If nothing is repeated and there's next button
-        if not repeated and self.next_page:
+    def goto_next_page(self):
+        # If there's a next button
+        if self.next_page:
             self.next_page.click()
-            return True
-        return False
 
     # Get all links in page that has css class "XTitle"
     def links(self, title):

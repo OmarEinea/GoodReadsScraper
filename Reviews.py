@@ -12,13 +12,10 @@ class Reviews:
     def __init__(self):
         self.br = GoodReadsBrowser()
         self.ids = []
-        # Counter for invalid reviews
-        self.invalid = 0
+        # Counter for time of reloading a page
+        self.reload = 0
         # Counter for reviews from different languages
         self.diff_lang = 0
-        # Flag for indicating reviews
-        # repetition due to page reload delay
-        self.repeated = False
         # Write book reviews to this file
         self.file = None
         # Folder to put files in
@@ -35,32 +32,48 @@ class Reviews:
         self.file = codecs.open(self.dir + str(book_id) + ".txt", "a+", "utf-8")
         # Scrape as many reviews as possible
         while True:
-            self._scrape_book(self.br.page_source)
-            # Stop if there're many invalid reviews or there's no next page
-            if self.invalid > 5 or self.diff_lang > 10 or not self.br.has_next_page():
+            # Scrape book page and return whether it loaded
+            if not self._scrape_book(self.br.page_source):
+                # Refresh if page didn't load for five seconds
+                if self.reload > 5:
+                    self.br.refresh()
+                    self.reload = 0
+                # Wait one second for page to load
+                time.sleep(1)
+                continue
+            # Stop if there're many unwanted reviews or there's no next page
+            if self.diff_lang > 20 or not self.br.has_next_page():
                 break
-            # Go to next page if there's no repetition
-            if not self.br.goto_next_page(self.repeated):
-                self.repeated = False
             # Wait for two second for next page to load
             time.sleep(2)
+        # Empty ids array
+        self.ids.clear()
 
     # Scrape a single page's reviews
     def _scrape_book(self, html):
         # Store reviews section of the page in soup
         soup = BeautifulSoup(html, "lxml").find(id="bookReviews")
+        # Check if page has loaded
+        if not soup:
+            return False
+        temp_ids = []
+        # Loop through reviews ids
+        for review in soup.find_all(class_="review"):
+            temp_ids.append(review.get("id")[7:])
+        # Check that no reviews are repeated
+        if any(i in temp_ids for i in self.ids[-31:]):
+            return False
+        # Invest time and go to next page from now
+        if self.br.has_next_page():
+            self.br.goto_next_page()
         # Loop through reviews individually
-        for review in soup.find_all(class_="bodycol"):
+        for review, i in zip(soup.find_all(class_="bodycol"), temp_ids):
             # Hold rating and text part of a review
             rating = review.find(class_="staticStars")
             readable = review.find(class_="readable")
-            # If one of the above is missing
+            # Skip the rest if one of the above is missing
             if not rating or not readable:
-                # Count it as invalid
-                self.invalid += 1
                 continue
-            # If it's not a strike of invalid reviews, reset the counter
-            self.invalid = 0
             # Get full review text, even hidden parts
             comment = (readable.find(style="display:none") or readable.find()).text
             # Detect which language the review is in
@@ -73,24 +86,12 @@ class Reviews:
                 continue
             # If it's not a strike, reset the counter
             self.diff_lang = 0
-            # Hold how many stars the review was rated
-            stars = str(self.SWITCH[rating.find().text])
             # Write the scraped data to the file
-            self._write_review(stars, comment, readable.get("id")[19:])
-
-    # Write data to file and prompt notification
-    def _write_review(self, stars, comment, review_id):
-        # If review id is already stored among ids
-        if review_id in self.ids:
-            # Notify and flag as repeated
-            print("Repeated ID:", end=" ")
-            self.repeated = True
-        else:
-            # Otherwise notify and store as new
-            self.ids.append(review_id)
-            self.file.write(stars + ' ' + comment + '\n')
-            print("Added ID:", end=" ")
-        print(review_id)
+            self.file.write(str(self.SWITCH[rating.find().text]) + ' ' + comment + '\n')
+            # Notify and add review id to ids
+            self.ids.append(i)
+            print("Added ID:" + i)
+        return True
 
     # Switch reviews ratings to stars from 1 to 5
     SWITCH = {"it was amazing": 5, "really liked it": 4, "liked it": 3, "it was ok": 2, "did not like it": 1}
