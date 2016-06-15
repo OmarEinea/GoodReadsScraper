@@ -2,6 +2,7 @@
 
 # import needed libraries
 from Browser import GoodReadsBrowser
+from Writer import Writer
 
 
 # A class to Search then Scrape lists and books from GoodReads.com
@@ -10,28 +11,19 @@ class Books:
 
     def __init__(self, keyword=None):
         self.br = GoodReadsBrowser()
+        self.wr = Writer()
         self.set_keyword(keyword)
         # An array for scrapped lists and books
         self.lists = set()
         self.books = set()
 
     # Scrape books and write them to a file
-    def write_books(self, file_name="books.txt"):
-        books = open(file_name, 'w')
+    def write_books(self, file_name="books"):
+        self.wr.open(file_name)
         # Loop through book ids and write them
         for book_id in self.get_books():
-            books.write(book_id + '\n')
-        books.close()
-
-    # Read already scraped books to the array
-    def read_books(self, file_name="books.txt"):
-        books = open(file_name, 'r')
-        # Loop through all books ids from file
-        for book_id in books:
-            # Add book id to array without new line
-            self.books.add(book_id.replace('\n', ''))
-        books.close()
-        return self.books
+            self.wr.write(book_id)
+        self.wr.close()
 
     # Main function to scrape books ids
     def get_books(self):
