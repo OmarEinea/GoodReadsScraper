@@ -14,11 +14,12 @@ class Reviews:
         # Browsing and writing managers
         self.br = Browser()
         self.wr = Writer()
+        # Array for previous reviews ids
         self.ids = []
         # Counter for time of reloading a page
         self.reload = 0
         # Counter for reviews from different languages
-        self.diff_lang = 0
+        self.invalid = 0
 
     # Scrape and write books' reviews to separate files
     def output_books_reviews(self, books_ids, consider_previous=True):
@@ -41,6 +42,7 @@ class Reviews:
             if not self._process_book(self.br.page_source):
                 # Refresh if page didn't load for five seconds
                 print("Waiting")
+                self.reload += 1
                 if self.reload > 5:
                     print("Refreshing")
                     self.br.refresh()
@@ -49,14 +51,14 @@ class Reviews:
                 time.sleep(1)
                 continue
             # Stop if there're many unwanted reviews or there's no next page
-            if self.diff_lang > 20 or not self.br.has_next_page():
+            if self.invalid > 20 or not self.br.has_next_page():
                 break
             # Wait for two second for next page to load
             time.sleep(2)
         # Finalize file name and close it
         self.wr.close_book_file(len(self.ids))
         # Empty ids array
-        self.ids.clear()
+        self.ids = []
 
     # Check for possible errors then scrape book
     def _process_book(self, html):
@@ -66,46 +68,48 @@ class Reviews:
         if not soup:
             return False
         temp_ids = []
-        # Loop through reviews ids
+        reviews = []
+        # Loop through reviews and their ids and store them
         for review in soup.find_all(class_="review"):
             temp_ids.append(review.get("id")[7:])
+            reviews.append(review)
         # Check that no reviews are repeated
-        if any(i in temp_ids for i in self.ids[-31:]):
+        if any(id_ in temp_ids for id_ in self.ids):
             return False
+        self.ids = []
         # Invest time and go to next page from now
         if self.br.has_next_page():
             self.br.goto_next_page()
         # Good to go, start scraping book
-        self._scrape_book(zip(soup.find_all(class_="bodycol"), temp_ids))
+        self._scrape_book(reviews)
         return True
 
     # Scrape a single page's reviews
     def _scrape_book(self, reviews):
         # Loop through reviews individually
-        for review, i in reviews:
-            # Hold rating and text part of a review
-            rating = review.find(class_="staticStars")
-            readable = review.find(class_="readable")
-            # Skip the rest if one of the above is missing
-            if not rating or not readable:
-                continue
-            # Get full review text, even hidden parts
-            comment = (readable.find(style="display:none") or readable.find()).text
-            # Detect which language the review is in
+        for review in reviews:
             try:
+                # Get rating out of five stars
+                stars = self.SWITCH[review.find(class_="staticStars").find().text]
+                # Get full review text, even hidden parts
+                comment = review.find(class_="readable").find_all("span")[-1].text
+                # Detect which language the review is in
                 if detect(comment) != "ar":
-                    raise Exception
-            # Count it as a different language review
+                    # Count it as a different language review
+                    self.invalid += 1
+                    continue
+            # Skip the rest if one of the above is missing
             except:
-                self.diff_lang += 1
                 continue
             # If it's not a strike, reset the counter
-            self.diff_lang = 0
+            self.invalid = 0
+            # Get review ID
+            id_ = review.get("id")[7:]
             # Write the scraped review to the file
-            self.wr.write_review(i, self.SWITCH[rating.find().text], comment)
+            self.wr.write_review(id_, stars, comment)
             # Notify and add review id to ids
-            self.ids.append(i)
-            print("Added ID:" + i)
+            self.ids.append(id_)
+            print("Added ID: " + id_)
 
     # Switch reviews ratings to stars from 1 to 5
     SWITCH = {"it was amazing": 5, "really liked it": 4, "liked it": 3, "it was ok": 2, "did not like it": 1}

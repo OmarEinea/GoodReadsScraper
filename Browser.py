@@ -10,7 +10,7 @@ class Browser(PhantomJS):
     def __init__(self):
         # Call super class constructor
         PhantomJS.__init__(self, "./phantomjs")
-        self.set_page_load_timeout(30)
+        self.set_page_load_timeout(20)
         self.next_page = None
 
     # General shortcut to open a GoodReads page
