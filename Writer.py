@@ -49,8 +49,12 @@ class Writer:
         self.file.write(string + '\n')
 
     # Write review to file
-    def write_review(self, name, stars, comment):
-        self.write(name + '\t' + str(stars) + '\t' + comment)
+    def write_review(self, id_, date, stars, comment):
+        self.write(id_ + '\t' + date + '\t' + str(stars) + '\t' + comment)
+
+    # Write book meta data to file
+    def write_book_meta(self, book_id, title, rating, id_, name):
+        self.write(str(book_id) + '\t' + title + '\t' + rating + '\t' + id_ + '\t' + name)
 
     # General shortcut to close the file
     def close(self):
