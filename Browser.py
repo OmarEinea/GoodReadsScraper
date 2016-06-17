@@ -2,6 +2,9 @@
 
 # import needed libraries
 from selenium.webdriver import PhantomJS
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 
@@ -10,7 +13,7 @@ class Browser(PhantomJS):
     def __init__(self):
         # Call super class constructor
         PhantomJS.__init__(self, "./phantomjs")
-        self.set_page_load_timeout(20)
+        self.set_page_load_timeout(15)
         self.next_page = None
 
     # General shortcut to open a GoodReads page
@@ -24,8 +27,8 @@ class Browser(PhantomJS):
             break
 
     # Shortcut to open GoodReads book page
-    def open_book_page(self, book_id):
-        self.open("/book/show/", book_id, "?text_only=true&sort=newest")
+    def open_book_page(self, book_id, sort="newest"):
+        self.open("/book/show/", book_id, "?text_only=true&sort=" + sort)
 
     # Shortcut to open GoodReads books list
     def open_list_page(self, list_id):
@@ -51,6 +54,13 @@ class Browser(PhantomJS):
         # If there's a next button
         if self.next_page:
             self.next_page.click()
+
+    def is_page_loaded(self, page):
+        try:
+            WebDriverWait(self, 10).until(EC.text_to_be_present_in_element((By.CLASS_NAME, "current"), page))
+            return True
+        except TimeoutException:
+            return False
 
     # Get all links in page that has css class "XTitle"
     def links(self, title):
