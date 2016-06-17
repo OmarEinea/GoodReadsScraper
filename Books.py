@@ -15,24 +15,24 @@ class Books:
         self.wr = Writer()
         self.set_keyword(keyword)
         # An array for scrapped lists and books
-        self.lists = set()
-        self.books = set()
+        self.lists = []
+        self.books = []
 
     # Scrape books and write them to a file
-    def output_books(self, file_name="books"):
+    def output_books(self, list_=None, file_name="books"):
         self.wr.open(file_name)
         # Loop through book ids and write them
-        for book_id in self.get_books():
+        for book_id in self.get_books(list_):
             self.wr.write(book_id)
         self.wr.close()
 
     # Main function to scrape books ids
-    def get_books(self):
+    def get_books(self, list_=None):
         # Return books array if it's not empty
-        if self.books != set():
+        if not self.books == []:
             return self.books
         # Loop through all lists
-        for list_id in self.get_lists():
+        for list_id in self.get_lists(list_):
             # Open each list url
             self.br.open_list_page(list_id)
             # Scrape pages until there's no next page
@@ -45,9 +45,11 @@ class Books:
         return self.books
 
     # Main function to scrape lists ids
-    def get_lists(self):
+    def get_lists(self, list_=None):
+        if list_:
+            return [list_]
         # Return lists array if it's not empty
-        if self.lists != set():
+        if not self.lists == []:
             return self.lists
         # Open GoodReads' lists search url
         self.br.open_list_search(self.keyword)
@@ -68,6 +70,9 @@ class Books:
     def __scrape_list(self, title, array):
         # Loop through all link that start with sub_url
         for link in self.br.links(title):
+            # Get id from url
+            id_ = link.get_attribute("href")[36:].split('.')[0].split('-')[0]
             # Extract and store unique id from link
-            array.add(link.get_attribute("href")[36:].split('.')[0].split('-')[0])
-            print(title + ' ' + str(len(array)))
+            if id_ not in array:
+                array.append(id_)
+                print(title + '\t' + id_ + '\t\t count: ' + str(len(array)))
