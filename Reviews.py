@@ -14,11 +14,11 @@ class Reviews:
         self.br = Browser()
         self.wr = Writer()
         # Counter for reviews from different languages
-        self.invalid = None
+        self._invalid = None
         # Counter for current page number
-        self.page = None
+        self._page = None
         # Array for possible 100th page ids
-        self.ids = []
+        self._ids = []
 
     # Scrape and write books' reviews to separate files
     def output_books_reviews(self, books_ids, consider_previous=True):
@@ -35,19 +35,19 @@ class Reviews:
         self.wr.open_book_file(book_id)
         self.br.open_book_page(book_id)
         # Reset invalid reviews counter and page counter
-        self.invalid = 0
-        self.page = 0
+        self._invalid = 0
+        self._page = 0
         # Scrape book meta data in first line
         self._scrape_book_meta(book_id, self.br.page_source)
         # Scrape first page of the book anyway
         self._scrape_book_page(self.br.page_source)
         # Scrape the remaining pages
-        while self.invalid < 30:
+        while self._invalid < 30:
             # Go to next page if there's one
             if self.br.has_next_page():
                 self.br.goto_next_page()
             # If there's a 100th page
-            elif 1 + self.page == 100:
+            elif 1 + self._page == 100:
                 # Order reviews from oldest and loop again
                 self.br.open_book_page(book_id, "oldest")
                 print("Switching to order by oldest")
@@ -55,9 +55,9 @@ class Reviews:
             else:
                 break
             # Moved to next page
-            self.page += 1
+            self._page += 1
             # Wait until next page is loaded
-            if self.br.is_page_loaded(str(1 + self.page % 100)):
+            if self.br.is_page_loaded(str(1 + self._page % 100)):
                 # Scrape book and break if it's completely done
                 if not self._scrape_book_page(self.br.page_source):
                     break
@@ -91,13 +91,13 @@ class Reviews:
         for review in soup.find_all(class_="review"):
             try:
                 # Get rating out of five stars
-                stars = self.SWITCH[review.find(class_="staticStars").find().text]
+                stars = self._SWITCH[review.find(class_="staticStars").find().text]
                 # Get full review text even the hidden parts, and remove spaces and newlines
                 comment = review.find(class_="readable").find_all("span")[-1].get_text(". ", strip=True)
                 # Detect which language the review is in
                 if detect(comment) != "ar":
                     # Count it as a different language review
-                    self.invalid += 1
+                    self._invalid += 1
                     continue
                 # Get review date
                 date = review.find(class_="reviewDate").text
@@ -105,16 +105,16 @@ class Reviews:
             except:
                 continue
             # If it's not a strike, reset the counter
-            self.invalid = 0
+            self._invalid = 0
             # Get review ID
             id_ = review.get("id")[7:]
             # If it's the 100th page or passed it
-            if 1 + self.page >= 100:
+            if 1 + self._page >= 100:
                 # Store the 100th page reviews ids
-                if 1 + self.page == 100:
-                    self.ids.append(id_)
+                if 1 + self._page == 100:
+                    self._ids.append(id_)
                 # Check that reviews aren't repeating
-                elif id_ in self.ids:
+                elif id_ in self._ids:
                     return False
             # Write the scraped review to the file
             self.wr.write_review(id_, date, stars, comment)
@@ -123,4 +123,4 @@ class Reviews:
         return True
 
     # Switch reviews ratings to stars from 1 to 5
-    SWITCH = {"it was amazing": 5, "really liked it": 4, "liked it": 3, "it was ok": 2, "did not like it": 1}
+    _SWITCH = {"it was amazing": 5, "really liked it": 4, "liked it": 3, "it was ok": 2, "did not like it": 1}

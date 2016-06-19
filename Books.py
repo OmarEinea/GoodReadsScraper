@@ -12,8 +12,8 @@ class Books:
         self.br = Browser()
         self.wr = Writer()
         # An array for scrapped lists and books
-        self.lists = []
-        self.books = []
+        self._lists = []
+        self._books = []
 
     # Scrape books and write them to a file (browse is: list, lists or shelf)
     def output_books(self, keyword, browse="list", file_name="books"):
@@ -40,12 +40,12 @@ class Books:
             self.br.open_page(keyword, browse)
             # Scrape pages until there's no next page
             while True:
-                self._scrape_list("book", self.books)
+                self._scrape_list("book", self._books)
                 if self.br.has_next_page():
                     self.br.goto_next_page()
                 else:
                     break
-        return self.books
+        return self._books
 
     # Main function to scrape lists ids
     def get_lists(self, keyword):
@@ -53,12 +53,12 @@ class Books:
         self.br.open_list_search(keyword)
         # Scrape all result pages
         while True:
-            self._scrape_list("list", self.lists)
+            self._scrape_list("list", self._lists)
             if self.br.has_next_page():
                 self.br.goto_next_page()
             else:
                 break
-        return self.lists
+        return self._lists
 
     # Scrape a single search results page
     def _scrape_list(self, title, array):

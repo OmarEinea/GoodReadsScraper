@@ -20,7 +20,7 @@ class Browser(PhantomJS):
         PhantomJS.__init__(self, "./phantomjs")
         # Set page loading timeout to 15 seconds
         self.set_page_load_timeout(15)
-        self.next_page = None
+        self._next_page = None
 
     # Login to Goodreads.com
     def login(self, email, password):
@@ -56,18 +56,18 @@ class Browser(PhantomJS):
     def has_next_page(self):
         # Try to find the next button
         try:
-            self.next_page = self.find_element_by_class_name("next_page")
+            self._next_page = self.find_element_by_class_name("next_page")
         # Return false if there isn't one
         except NoSuchElementException:
             return False
         # Check if button is click-able (i.e. it's anchor tag)
-        return self.next_page.tag_name == 'a'
+        return self._next_page.tag_name == 'a'
 
     # Click the next button to go to next page
     def goto_next_page(self):
         # If there's a next button
-        if self.next_page:
-            self.next_page.click()
+        if self._next_page:
+            self._next_page.click()
 
     # Return if next page is loaded
     def is_page_loaded(self, page):
