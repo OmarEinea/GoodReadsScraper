@@ -42,7 +42,7 @@ class Reviews:
         # Scrape first page of the book anyway
         self._scrape_book_page(self.br.page_source)
         # Scrape the remaining pages
-        while self.invalid < 20:
+        while self.invalid < 30:
             # Go to next page if there's one
             if self.br.has_next_page():
                 self.br.goto_next_page()
@@ -69,7 +69,7 @@ class Reviews:
         # Store book meta section of the page in soup
         soup = BeautifulSoup(html, "lxml").find(id="metacol")
         # Get book title and remove spaces from it
-        title = soup.find(id="bookTitle").text.replace('\n', '')
+        title = soup.find(id="bookTitle").get_text(". ", strip=True)
         # Get average rating of the book out of five
         rating = soup.find(class_="average").text
         # Store author data section
@@ -92,8 +92,8 @@ class Reviews:
             try:
                 # Get rating out of five stars
                 stars = self.SWITCH[review.find(class_="staticStars").find().text]
-                # Get full review text, even hidden parts
-                comment = review.find(class_="readable").find_all("span")[-1].text
+                # Get full review text even the hidden parts, and remove spaces and newlines
+                comment = review.find(class_="readable").find_all("span")[-1].get_text(". ", strip=True)
                 # Detect which language the review is in
                 if detect(comment) != "ar":
                     # Count it as a different language review
@@ -117,7 +117,7 @@ class Reviews:
                 elif id_ in self.ids:
                     return False
             # Write the scraped review to the file
-            self.wr.write_review(id_, date, stars, comment.replace('\n', ''))
+            self.wr.write_review(id_, date, stars, comment)
             # Add review id to ids
             print("Added ID:\t" + id_)
         return True

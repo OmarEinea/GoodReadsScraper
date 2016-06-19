@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 # import needed libraries
-import os, codecs
+import codecs
+import os
 
 
 # A class to Write Books and Reviews from GoodReads.com to files
@@ -19,6 +20,21 @@ class Writer:
     def set_path(self, path):
         self.path = path
 
+    # Counter for total lines written
+    def count_files_lines(self):
+        total = 0
+        # Loop through all files in path
+        for file in os.listdir(self.path):
+            # Only count completed files
+            if file[0] == 'C':
+                # Open file as read only
+                self.open(file[:-4], 'r', self.path)
+                # Add numbers of lines in file to total
+                total += len(self.file.readlines()) - 1
+        # Display and return total count
+        print("Total Count:\t" + str(total))
+        return total
+
     # Discard empty and complete files
     def consider_written_files(self, array):
         self.prepare_path()
@@ -29,7 +45,8 @@ class Writer:
                 # Try to remove it from array
                 try:
                     array.remove(file[2:-4])
-                except: pass
+                except:
+                    pass
 
     # Create folder if it isn't already there
     def prepare_path(self):
@@ -90,4 +107,3 @@ class Writer:
         else:
             print("Can't find file to read from!")
         return books
-

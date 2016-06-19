@@ -7,37 +7,40 @@ from Writer import Writer
 
 # A class to Search then Scrape lists and books from GoodReads.com
 class Books:
-    keyword = None
-
-    def __init__(self, keyword=None):
+    def __init__(self):
         # Browsing and writing managers
         self.br = Browser()
         self.wr = Writer()
-        self.set_keyword(keyword)
         # An array for scrapped lists and books
         self.lists = []
         self.books = []
 
-    # Scrape books and write them to a file
-    def output_books(self, list_=None, file_name="books"):
+    # Scrape books and write them to a file (browse is: list, lists or shelf)
+    def output_books(self, keyword, browse="list", file_name="books"):
         self.wr.open(file_name)
         # Loop through book ids and write them
-        for book_id in self.get_books(list_):
+        for book_id in self.get_books(keyword, browse):
             self.wr.write(book_id)
         self.wr.close()
 
     # Main function to scrape books ids
-    def get_books(self, list_=None):
-        # Return books array if it's not empty
-        if not self.books == []:
-            return self.books
+    def get_books(self, keyword, browse="list"):
+        # Replace spaces with '+' for a valid url
+        keyword = str(keyword).replace(' ', '+')
+        # Get lists in search list if searching
+        if browse == "lists":
+            keywords = self.get_lists(keyword)
+            browse = "list"
+        # Otherwise, it's a single "list" or "shelf"
+        else:
+            keywords = [keyword]
         # Loop through all lists
-        for list_id in self.get_lists(list_):
+        for keyword in keywords:
             # Open each list url
-            self.br.open_list_page(list_id)
+            self.br.open_page(keyword, browse)
             # Scrape pages until there's no next page
             while True:
-                self.__scrape_list("book", self.books)
+                self._scrape_list("book", self.books)
                 if self.br.has_next_page():
                     self.br.goto_next_page()
                 else:
@@ -45,29 +48,20 @@ class Books:
         return self.books
 
     # Main function to scrape lists ids
-    def get_lists(self, list_=None):
-        if list_:
-            return [list_]
-        # Return lists array if it's not empty
-        if not self.lists == []:
-            return self.lists
+    def get_lists(self, keyword):
         # Open GoodReads' lists search url
-        self.br.open_list_search(self.keyword)
+        self.br.open_list_search(keyword)
         # Scrape all result pages
         while True:
-            self.__scrape_list("list", self.lists)
+            self._scrape_list("list", self.lists)
             if self.br.has_next_page():
                 self.br.goto_next_page()
             else:
                 break
         return self.lists
 
-    # Keyword setter
-    def set_keyword(self, keyword):
-        self.keyword = str(keyword).replace(' ', '+')
-
     # Scrape a single search results page
-    def __scrape_list(self, title, array):
+    def _scrape_list(self, title, array):
         # Loop through all link that start with sub_url
         for link in self.br.links(title):
             # Get id from url
@@ -75,4 +69,4 @@ class Books:
             # Extract and store unique id from link
             if id_ not in array:
                 array.append(id_)
-                print(title + '\t' + id_ + '\t\t count: ' + str(len(array)))
+                print(title + '\t' + "%-10s" % id_ + "count: " + str(len(array)))
