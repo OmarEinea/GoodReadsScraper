@@ -18,13 +18,15 @@ class Reviews:
         # Counter for current page number
         self._page = None
         # Array for possible 100th page ids
-        self._ids = []
+        self._ids = set()
 
     # Scrape and write books' reviews to separate files
     def output_books_reviews(self, books_ids, consider_previous=True):
         if consider_previous:
             # Don't loop through already scraped books
             self.wr.consider_written_files(books_ids)
+        # Show how many books are going to be scraped
+        print("Scraping " + str(len(books_ids)) + " Books")
         # Loop through book ids in array and scrape books
         for book_id in books_ids:
             self.output_book_reviews(book_id)
@@ -42,22 +44,21 @@ class Reviews:
         # Scrape first page of the book anyway
         self._scrape_book_page(self.br.page_source)
         # Scrape the remaining pages
-        while self._invalid < 30:
+        while self._invalid < 60:
             # Go to next page if there's one
-            if self.br.has_next_page():
-                self.br.goto_next_page()
-            # If there's a 100th page
-            elif 1 + self._page == 100:
-                # Order reviews from oldest and loop again
-                self.br.open_book_page(book_id, "oldest")
-                print("Switching to order by oldest")
-            # Break if there's no next page
-            else:
-                break
+            if not self.br.goto_next_page():
+                # If there's a 100th page
+                if 1 + self._page == 100:
+                    # Order reviews from oldest and loop again
+                    self.br.open_book_page(book_id, "oldest")
+                    print("Switching to order by oldest")
+                # Break if there's no next page
+                else:
+                    break
             # Moved to next page
             self._page += 1
             # Wait until next page is loaded
-            if self.br.is_page_loaded(str(1 + self._page % 100)):
+            if self.br.is_page_loaded(1 + self._page % 100):
                 # Scrape book and break if it's completely done
                 if not self._scrape_book_page(self.br.page_source):
                     break
@@ -66,22 +67,30 @@ class Reviews:
 
     # Scrape and write book and author data
     def _scrape_book_meta(self, book_id, html):
-        # Store book meta section of the page in soup
-        soup = BeautifulSoup(html, "lxml").find(id="metacol")
+        # Create soup object from page html
+        soup = BeautifulSoup(html, "lxml")
+        # Store book meta section of the page in soup unless book not available
+        soup = soup.find(id="metacol") or soup.find(class_="errorBox").get_text().strip()
+        # If book is not found
+        if soup == "Could not find this book.":
+            print("*Book ID:\t" + "%-15s" % str(book_id) + "Not Found!")
+            # Close file and raise an error
+            self.wr.close_book_file()
+            raise FileNotFoundError
         # Get book title and remove spaces from it
         title = soup.find(id="bookTitle").get_text(". ", strip=True)
         # Get average rating of the book out of five
-        rating = soup.find(class_="average").text
+        rating = soup.find(class_="average").get_text()
         # Store author data section
         author = soup.find(class_="authorName")
         # Get author id from url
         id_ = author.get("href")[38:].split('.')[0]
         # Get author name
-        name = author.find().text
+        name = author.find().get_text()
         # Write scraped meta data to file's first line
         self.wr.write_book_meta(book_id, title, rating, id_, name)
         # Display book id and title
-        print("*Book ID:\t" + str(book_id) + "\t\tTitle:\t" + title)
+        print("*Book ID:\t" + "%-15s" % str(book_id) + "Title:\t" + title)
 
     # Scrape a single page's reviews
     def _scrape_book_page(self, html):
@@ -91,7 +100,7 @@ class Reviews:
         for review in soup.find_all(class_="review"):
             try:
                 # Get rating out of five stars
-                stars = self._SWITCH[review.find(class_="staticStars").find().text]
+                stars = self._SWITCH[review.find(class_="staticStars").find().get_text()]
                 # Get full review text even the hidden parts, and remove spaces and newlines
                 comment = review.find(class_="readable").find_all("span")[-1].get_text(". ", strip=True)
                 # Detect which language the review is in
@@ -100,9 +109,11 @@ class Reviews:
                     self._invalid += 1
                     continue
                 # Get review date
-                date = review.find(class_="reviewDate").text
+                date = review.find(class_="reviewDate").get_text()
             # Skip the rest if one of the above is missing
             except:
+                # Count it as an invalid review
+                self._invalid += 2
                 continue
             # If it's not a strike, reset the counter
             self._invalid = 0
@@ -112,9 +123,10 @@ class Reviews:
             if 1 + self._page >= 100:
                 # Store the 100th page reviews ids
                 if 1 + self._page == 100:
-                    self._ids.append(id_)
+                    self._ids.add(id_)
                 # Check that reviews aren't repeating
                 elif id_ in self._ids:
+                    self._ids.clear()
                     return False
             # Write the scraped review to the file
             self.wr.write_review(id_, date, stars, comment)
