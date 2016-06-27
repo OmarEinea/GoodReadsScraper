@@ -14,26 +14,16 @@ class Writer:
         self._path = "./BooksReviews/"
         # Output file format
         self._format = ".txt"
-        self._empty = None
+        # Backup for write_review()
+        self._write_review = self.write_review
 
     # Path setter
     def set_path(self, path):
         self._path = path
 
-    # Counter for total lines written
-    def count_files_lines(self):
-        total = 0
-        # Loop through all files in path
-        for file in os.listdir(self._path):
-            # Only count completed files
-            if file[0] == 'C':
-                # Open file as read only
-                self.open(file[:-4], 'r', self._path)
-                # Add numbers of lines in file to total
-                total += len(self._file.readlines()) - 1
-        # Display and return total count
-        print("Total Count:\t" + str(total))
-        return total
+    # File format setter
+    def set_format(self, format_):
+        self._format = format_
 
     # Discard empty and complete files
     def consider_written_files(self, array):
@@ -65,19 +55,21 @@ class Writer:
             os.remove(self._path + str(name) + self._format)
         # Open the book reviews file with utf-8 encoding
         self.open(str(name), "a+", self._path)
-        # File is empty once you open it
-        self._empty = True
 
     # General shortcut to write a string to file
     def write(self, string):
         self._file.write(string + '\n')
 
-    # Write review to file
+    # Write first review to file
     def write_review(self, id_, date, stars, comment):
+        # Write the review to the opened file
+        self.write_review_to_file(id_, date, stars, comment)
+        # Change method to indicate that file isn't empty
+        self.write_review = self.write_review_to_file
+
+    # Write review to file
+    def write_review_to_file(self, id_, date, stars, comment):
         self.write(id_ + '\t' + date + '\t' + str(stars) + '\t' + comment)
-        # If a review is written, file isn't empty anymore
-        if self._empty:
-            self._empty = False
 
     # Write book meta data to file
     def write_book_meta(self, book_id, title, rating, id_, name):
@@ -89,8 +81,12 @@ class Writer:
 
     # Flag file as empty or complete and close it
     def close_book_file(self):
+        # If write_review() is still equal to its backup, then file is empty
+        empty = self._write_review == self.write_review
+        # Restore write_review() from backup
+        self.write_review = self._write_review
         # If no reviews were added mark file as empty, otherwise mark it as complete
-        os.rename(self._file.name, self._path + ("C_", "E_")[self._empty] + self._file.name.split(self._path)[1])
+        os.rename(self._file.name, self._path + ("C_", "E_")[empty] + self._file.name.split(self._path)[1])
         # Close file
         self.close()
 
