@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 '''# Remove the tipple quotations if using chrome is preferred
+# Download link: https://sites.google.com/a/chromium.org/chromedriver/downloads
 from selenium.webdriver import Chrome, ChromeOptions
 
 class Browser(Chrome):

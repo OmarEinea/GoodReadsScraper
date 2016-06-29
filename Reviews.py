@@ -9,7 +9,9 @@ from Writer import Writer
 
 # A class to Scrape books Reviews from GoodReads.com
 class Reviews:
-    def __init__(self):
+    def __init__(self, lang="ar"):
+        # Language of reviews to be scraped
+        self.lang = lang
         # Browsing and writing managers
         self.br = Browser()
         self.wr = Writer()
@@ -18,7 +20,7 @@ class Reviews:
         # Counter for current page number
         self._page = None
         # Array for possible 100th page ids
-        self._ids = set()
+        self._reviews_ids = set()
 
     # Scrape and write books' reviews to separate files
     def output_books_reviews(self, books_ids, consider_previous=True):
@@ -99,12 +101,14 @@ class Reviews:
         # Loop through reviews individually
         for review in soup.find_all(class_="review"):
             try:
+                # Get user / reviewer id
+                user_id = review.find(class_="user").get("href")[11:].split('-')[0]
                 # Get rating out of five stars
                 stars = self._SWITCH[review.find(class_="staticStars").find().get_text()]
                 # Get full review text even the hidden parts, and remove spaces and newlines
                 comment = review.find(class_="readable").find_all("span")[-1].get_text(". ", strip=True)
                 # Detect which language the review is in
-                if detect(comment) != "ar":
+                if detect(comment) != self.lang:
                     # Count it as a different language review
                     self._invalid += 1
                     continue
@@ -118,20 +122,20 @@ class Reviews:
             # If it's not a strike, reset the counter
             self._invalid = 0
             # Get review ID
-            id_ = review.get("id")[7:]
+            review_id = review.get("id")[7:]
             # If it's the 100th page or passed it
             if 1 + self._page >= 100:
                 # Store the 100th page reviews ids
                 if 1 + self._page == 100:
-                    self._ids.add(id_)
+                    self._reviews_ids.add(review_id)
                 # Check that reviews aren't repeating
-                elif id_ in self._ids:
-                    self._ids.clear()
+                elif review_id in self._reviews_ids:
+                    self._reviews_ids.clear()
                     return False
             # Write the scraped review to the file
-            self.wr.write_review(id_, date, stars, comment)
+            self.wr.write_review(review_id, user_id, date, stars, comment)
             # Add review id to ids
-            print("Added ID:\t" + id_)
+            print("Added ID:\t" + review_id)
         return True
 
     # Switch reviews ratings to stars from 1 to 5

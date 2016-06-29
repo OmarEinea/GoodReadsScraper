@@ -25,7 +25,7 @@ if __name__ == '__main__':
             count += 1
             # Every three times this happens, wait a bit
             if count % 3 == 0:
-                sleep(900)
+                sleep(800)
             r = Reviews()
         # If book is not found, just skip it
         except FileNotFoundError:

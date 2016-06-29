@@ -27,19 +27,21 @@ class Writer:
 
     # Discard empty and complete files
     def consider_written_files(self, array):
-        self.prepare_path()
+        self._prepare_path()
         # Loop through files in the chosen path
         for file in os.listdir(self._path):
             # If file starts with C_ or E_
             if not file[0].isdigit():
                 # Try to remove it from array
-                try:
+                if file[2:-4] in array:
                     array.remove(file[2:-4])
-                except:
-                    pass
+        if os.path.exists("empty.txt"):
+            for file in open("empty.txt", 'r').readlines():
+                if file in array:
+                    array.remove(file)
 
     # Create folder if it isn't already there
-    def prepare_path(self):
+    def _prepare_path(self):
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
@@ -49,7 +51,7 @@ class Writer:
 
     # Open file to write book reviews
     def open_book_file(self, name):
-        self.prepare_path()
+        self._prepare_path()
         # Delete file if it already exists
         if os.path.exists(self._path + str(name) + self._format):
             os.remove(self._path + str(name) + self._format)
@@ -61,19 +63,19 @@ class Writer:
         self._file.write(string + '\n')
 
     # Write first review to file
-    def write_review(self, id_, date, stars, comment):
+    def write_review(self, review_id, user_id, date, stars, comment):
         # Write the review to the opened file
-        self.write_review_to_file(id_, date, stars, comment)
+        self.write_review_to_file(review_id, user_id, date, stars, comment)
         # Change method to indicate that file isn't empty
         self.write_review = self.write_review_to_file
 
     # Write review to file
-    def write_review_to_file(self, id_, date, stars, comment):
-        self.write(id_ + '\t' + date + '\t' + str(stars) + '\t' + comment)
+    def write_review_to_file(self, review_id, user_id, date, stars, comment):
+        self.write(review_id + '\t' + user_id + '\t' + date + '\t' + str(stars) + '\t' + comment)
 
     # Write book meta data to file
-    def write_book_meta(self, book_id, title, rating, id_, name):
-        self.write(str(book_id) + '\t' + title + '\t' + rating + '\t' + id_ + '\t' + name)
+    def write_book_meta(self, book_id, title, rating, author_id, name):
+        self.write(str(book_id) + '\t' + title + '\t' + rating + '\t' + author_id + '\t' + name)
 
     # General shortcut to close the file
     def close(self):

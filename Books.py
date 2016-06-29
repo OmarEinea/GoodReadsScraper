@@ -12,21 +12,21 @@ class Books:
         self.br = Browser()
         self.wr = Writer()
         # An array for scrapped books
-        self._books = []
+        self._books_ids = []
 
     # Append an external books ids array to local array
     def append_books(self, books_ids):
         # Loop through sent books ids
         for book_id in books_ids:
             # Only append id if it's not stored already
-            if book_id not in self._books:
-                self._books.append(book_id)
+            if book_id not in self._books_ids:
+                self._books_ids.append(book_id)
 
     # Scrape books and write them to a file (browse is: list, lists, author or shelf)
     def output_books(self, keyword=None, browse="list", file_name="books"):
         self.wr.open(file_name)
         # Get books if keyword is provided, otherwise output stored books
-        books_ids = self.get_books(keyword, browse) if keyword else self._books
+        books_ids = self.get_books(keyword, browse) if keyword else self._books_ids
         # Loop through book ids and write them
         for book_id in books_ids:
             self.wr.write(book_id)
@@ -38,7 +38,7 @@ class Books:
         keyword = str(keyword).replace(' ', '+')
         # Get lists in search list if searching
         if browse == "lists":
-            keywords = self.get_lists(keyword)
+            keywords = self._get_lists(keyword)
             browse = "list"
         # Otherwise, it's a single "list" or "shelf"
         else:
@@ -49,13 +49,13 @@ class Books:
             self.br.open_page(keyword, browse)
             # Scrape pages until there's no next page
             while True:
-                self._scrape_list("book", self._books)
+                self._scrape_list("book", self._books_ids)
                 if not self.br.goto_next_page():
                     break
-        return self._books
+        return self._books_ids
 
     # Main function to scrape lists ids
-    def get_lists(self, keyword):
+    def _get_lists(self, keyword):
         lists = []
         # Open GoodReads' lists search url
         self.br.open_list_search(keyword)
