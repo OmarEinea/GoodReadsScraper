@@ -2,7 +2,7 @@
 This is a python 3 web scraping script to get books reviews from goodreads.com,			<br>
 using the web browser automation tool Selenium, and BeautifulSoup for pulling data out of HTML.
 
-## Contents:
+### Contents:
 
 - Books.py: A class to scrape books ids from goodreads list or lists search or shelf
 - Reviews.py: A class to scrape reviews from goodreads books using books ids
@@ -12,7 +12,7 @@ using the web browser automation tool Selenium, and BeautifulSoup for pulling da
 - Writer.py: A class to write scraped reviews to files
 - requirements.txt: A list of Required Python modules, use: (pip install -r requirements.txt)
 
-## Documentation:
+### Documentation:
 
 - A Books object (from Books.py) represents the books that are needed to be scraped.	<br>
 	class Books() doesn't take any arguments
@@ -69,7 +69,7 @@ using the web browser automation tool Selenium, and BeautifulSoup for pulling da
 
 **Browser and Writer classes are only for implementation inside Books and Reviews Classes**
 
-## Demo
+### Demo
 
 Import needed modules:
 ```python
@@ -98,9 +98,15 @@ combine_reviews()
 
 **A more comprehensive example can be found in Sample.py**
 
-## Used Libraries
+### Used Libraries
 
 > - [Selenium](http://www.seleniumhq.org/)
 > - [PhantomJS](http://phantomjs.org/)
 > - [LangDetect](https://github.com/Mimino666/langdetect)
 > - [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)
+
+### License
+
+Copyright (C) 2016 by Omar Einea.
+
+This is an open source tool licensed under GPL v3.0. Copy of the license can be found [here](https://github.com/OmarEinea/GoodReads/blob/master/LICENSE.md).
