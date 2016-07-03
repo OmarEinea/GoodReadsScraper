@@ -4,6 +4,12 @@
 *.pyc
 
 #
+# Igonre all reviews output files and folder
+#
+*.csv
+BooksReviews
+
+#
 # Ignore PyCharm IDE project folder
 #
 .idea
@@ -11,5 +17,10 @@
 #
 # Ignore PhantomJS Driver and Log files
 #
-phantomjs
+phantomjs*
 ghostdriver.log
+
+#
+# Ignore Chrome Driver
+#
+chromedriver*
