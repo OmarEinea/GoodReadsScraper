@@ -76,6 +76,7 @@ def count_files_lines(from_file=None):
 # Delete all repeated reviews
 def delete_repeated_reviews():
     count = 0
+    invalid = 0
     ids = set()
     add_id = ids.add
     reviews = set()
@@ -91,21 +92,27 @@ def delete_repeated_reviews():
             f.close()
             # Write lines to the same file after erasing it
             f = open(dir_, 'w')
-            f.write(lines[0])
+            f_write = f.write
+            f_write(lines[0])
             # Loop through all reviews lines
             for line in lines[1:]:
-                # Get review id (that's before the first tab)
-                cells = line.split('\t', 2)
+                # Get line cells
+                cells = line.split('\t')
+                if len(cells) != 5:
+                    invalid += 1
+                    continue
+                # Store id
                 id_ = cells[0]
-                review = cells[-1]
+                # Review here is "date <tab> rating <tab> text"
+                review = '\t'.join(cells[2:])
                 # If id isn't repeated
                 if id_ not in ids:
                     # Add it to array and write it to file
                     add_id(id_)
                     if review not in reviews:
                         add_rev(review)
-                        f.write(line.replace("\u2028", ". "))
-                # If it's repeated, count it
+                        f_write(line.replace("\u2028", ". "))
+                # If it's repeated or invalid, count it
                 else:
                     count += 1
             f.close()
@@ -115,6 +122,7 @@ def delete_repeated_reviews():
                 os.rename(dir_, path + "E_" + file[2:])
     # Display counts and return all reviews ids
     print("Total Non-Repeated:\t" + str(len(reviews)))
+    print("Total Invalid By Cells:\t" + str(invalid))
     print("Total Repeated By ID:\t" + str(count))
     print("Total Repeated By Text:\t" + str(len(ids) - len(reviews)))
     return ids
