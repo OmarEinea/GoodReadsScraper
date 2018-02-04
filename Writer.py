@@ -71,11 +71,11 @@ class Writer:
 
     # Write review to file
     def write_review_to_file(self, review_id, user_id, date, stars, comment):
-        self.write(review_id + '\t' + user_id + '\t' + date + '\t' + str(stars) + '\t' + comment)
+        self.write('\t'.join([review_id, user_id, date, str(stars), comment]))
 
     # Write book meta data to file
     def write_book_meta(self, book_id, title, rating, author_id, name):
-        self.write(str(book_id) + '\t' + title + '\t' + rating + '\t' + author_id + '\t' + name)
+        self.write('\t'.join([str(book_id), title, rating, author_id, name]))
 
     # General shortcut to close the file
     def close(self):
@@ -87,10 +87,10 @@ class Writer:
         empty = self._write_review == self.write_review
         # Restore write_review() from backup
         self.write_review = self._write_review
-        # If no reviews were added mark file as empty, otherwise mark it as complete
-        os.rename(self._file.name, self._path + ("C_", "E_")[empty] + self._file.name.split(self._path)[1])
         # Close file
         self.close()
+        # If no reviews were added mark file as empty, otherwise mark it as complete
+        os.rename(self._file.name, self._path + ("C_", "E_")[empty] + self._file.name.split(self._path)[1])
 
     # Read already scraped books to the array
     def read_books(self, file_name="books"):

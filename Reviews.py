@@ -19,7 +19,7 @@ class Reviews:
         self._invalid = None
         # Counter for current page number
         self._page = None
-        # Array for possible 100th page ids
+        # Array for possible 10th page ids
         self._reviews_ids = set()
 
     # Scrape and write books' reviews to separate files
@@ -49,8 +49,8 @@ class Reviews:
         while self._invalid < 60:
             # Go to next page if there's one
             if not self.br.goto_next_page():
-                # If there's a 100th page
-                if 1 + self._page == 100:
+                # If there's a 10th page
+                if 1 + self._page == 10:
                     # Order reviews from oldest and loop again
                     self.br.open_book_page(book_id, "oldest")
                     print("Switching to order by oldest")
@@ -60,7 +60,7 @@ class Reviews:
             # Moved to next page
             self._page += 1
             # Wait until next page is loaded
-            if self.br.is_page_loaded(1 + self._page % 100):
+            if self.br.is_page_loaded(1 + self._page % 10):
                 # Scrape book and break if it's completely done
                 if not self._scrape_book_page(self.br.page_source):
                     break
@@ -104,7 +104,7 @@ class Reviews:
                 # Get user / reviewer id
                 user_id = review.find(class_="user").get("href")[11:].split('-')[0]
                 # Get rating out of five stars
-                stars = self._SWITCH[review.find(class_="staticStars").find().get_text()]
+                stars = len(review.find(class_="staticStars").find_all(class_="p10"))
                 # Get full review text even the hidden parts, and remove spaces and newlines
                 comment = review.find(class_="readable").find_all("span")[-1].get_text(". ", strip=True)
                 # Detect which language the review is in
@@ -115,7 +115,7 @@ class Reviews:
                 # Get review date
                 date = review.find(class_="reviewDate").get_text()
             # Skip the rest if one of the above is missing
-            except:
+            except Exception:
                 # Count it as an invalid review
                 self._invalid += 2
                 continue
@@ -123,10 +123,10 @@ class Reviews:
             self._invalid = 0
             # Get review ID
             review_id = review.get("id")[7:]
-            # If it's the 100th page or passed it
-            if 1 + self._page >= 100:
-                # Store the 100th page reviews ids
-                if 1 + self._page == 100:
+            # If it's the 10th page or passed it
+            if 1 + self._page >= 10:
+                # Store the 10th page reviews ids
+                if 1 + self._page == 10:
                     self._reviews_ids.add(review_id)
                 # Check that reviews aren't repeating
                 elif review_id in self._reviews_ids:
@@ -138,5 +138,5 @@ class Reviews:
             print("Added ID:\t" + review_id)
         return True
 
-    # Switch reviews ratings to stars from 1 to 5
-    _SWITCH = {"it was amazing": 5, "really liked it": 4, "liked it": 3, "it was ok": 2, "did not like it": 1}
+    def __del__(self):
+        self.br.close()

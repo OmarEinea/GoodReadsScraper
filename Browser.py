@@ -5,17 +5,18 @@ from selenium.webdriver import PhantomJS
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 
 '''# Remove the tipple quotations if using chrome is preferred
 # Download link: https://sites.google.com/a/chromium.org/chromedriver/downloads
 from selenium.webdriver import Chrome, ChromeOptions
 
+
 class Browser(Chrome):
     def __init__(self):
         options = ChromeOptions()
         options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
-        Chrome.__init__(self, "./chromedriver", chrome_options=options)
+        Chrome.__init__(self, "./chromedriver.exe", chrome_options=options)
         '''
 
 
@@ -29,8 +30,8 @@ class Browser(PhantomJS):
         call below (instead of "./phantomjs")
         """
         PhantomJS.__init__(self, "./phantomjs")
-        # Set page loading timeout to 15 seconds '''
-        self.set_page_load_timeout(15)
+        # Set page loading timeout to 25 seconds '''
+        self.set_page_load_timeout(25)
 
     # Login to Goodreads.com
     def login(self, email, password):
@@ -77,9 +78,8 @@ class Browser(PhantomJS):
                 next_page.click()
                 return True
         # Return false if there isn't one
-        except (NoSuchElementException, TimeoutException):
-            pass
-        return False
+        except (NoSuchElementException, TimeoutException, WebDriverException):
+            return False
 
     # Return if next page is loaded
     def is_page_loaded(self, page):
