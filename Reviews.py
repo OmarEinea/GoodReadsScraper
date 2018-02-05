@@ -28,7 +28,7 @@ class Reviews:
             # Don't loop through already scraped books
             self.wr.consider_written_files(books_ids)
         # Show how many books are going to be scraped
-        print("Scraping " + str(len(books_ids)) + " Books")
+        print(f"Scraping {len(books_ids)} Books")
         # Loop through book ids in array and scrape books
         for book_id in books_ids:
             self.output_book_reviews(book_id)
@@ -52,7 +52,8 @@ class Reviews:
                 # If there's a 10th page
                 if 1 + self._page == 10:
                     # Order reviews from oldest and loop again
-                    self.br.open_book_page(book_id, "oldest")
+                    # self.br.open_book_page(book_id)
+                    # TODO: Implement switch_to function
                     print("Switching to order by oldest")
                 # Break if there's no next page
                 else:
@@ -75,7 +76,7 @@ class Reviews:
         soup = soup.find(id="metacol") or soup.find(class_="errorBox").get_text().strip()
         # If book is not found
         if soup == "Could not find this book.":
-            print("*Book ID:\t" + "%-15s" % str(book_id) + "Not Found!")
+            print(f"*Book ID:\t{book_id:<15}Not Found!")
             # Close file and raise an error
             self.wr.close_book_file()
             raise FileNotFoundError
@@ -86,13 +87,13 @@ class Reviews:
         # Store author data section
         author = soup.find(class_="authorName")
         # Get author id from url
-        id_ = author.get("href")[38:].split('.')[0]
+        id_ = author.get("href")[38:].split(".")[0]
         # Get author name
         name = author.find().get_text()
         # Write scraped meta data to file's first line
         self.wr.write_book_meta(book_id, title, rating, id_, name)
         # Display book id and title
-        print("*Book ID:\t" + "%-15s" % str(book_id) + "Title:\t" + title)
+        print(f"*Book ID:\t{book_id:<15}Title:\t{title}")
 
     # Scrape a single page's reviews
     def _scrape_book_page(self, html):
@@ -102,7 +103,7 @@ class Reviews:
         for review in soup.find_all(class_="review"):
             try:
                 # Get user / reviewer id
-                user_id = review.find(class_="user").get("href")[11:].split('-')[0]
+                user_id = review.find(class_="user").get("href")[11:].split("-")[0]
                 # Get rating out of five stars
                 stars = len(review.find(class_="staticStars").find_all(class_="p10"))
                 # Get full review text even the hidden parts, and remove spaces and newlines
@@ -135,8 +136,9 @@ class Reviews:
             # Write the scraped review to the file
             self.wr.write_review(review_id, user_id, date, stars, comment)
             # Add review id to ids
-            print("Added ID:\t" + review_id)
+            print(f"Added ID:\t{review_id}")
         return True
 
     def __del__(self):
         self.br.close()
+        print("Closed browser")

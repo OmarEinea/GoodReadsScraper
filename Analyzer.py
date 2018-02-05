@@ -2,10 +2,11 @@ import operator
 
 
 def output(key, value):
-    value_type = "%d" if value == int(value) else "%.2f"
-    print(("%-25s " + value_type) % (key, value))
+    value_type = "" if value == int(value) else ".2f"
+    print(f"{key:<25}{value:{value_type}}")
 
-input_lines = open("reviews.csv", 'r').readlines()
+
+input_lines = open("reviews.csv", "r").readlines()
 output("Number of reviews:", len(input_lines))
 
 users = {}

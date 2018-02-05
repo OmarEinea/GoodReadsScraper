@@ -14,8 +14,8 @@ class Writer:
         self._path = "./BooksReviews/"
         # Output file format
         self._format = ".txt"
-        # Backup for write_review()
-        self._write_review = self.write_review
+        # Flag whether file is empty
+        self._empty = True
 
     # Path setter
     def set_path(self, path):
@@ -36,7 +36,7 @@ class Writer:
                 if file[2:-4] in array:
                     array.remove(file[2:-4])
         if os.path.exists("empty.txt"):
-            for file in open("empty.txt", 'r').readlines():
+            for file in open("empty.txt", "r").readlines():
                 if file in array:
                     array.remove(file)
 
@@ -46,7 +46,7 @@ class Writer:
             os.makedirs(self._path)
 
     # General shortcut to open a file for writing
-    def open(self, name, key='w', path="./"):
+    def open(self, name, key="w", path="./"):
         self._file = codecs.open(path + name + self._format, key, "utf-8")
 
     # Open file to write book reviews
@@ -60,22 +60,17 @@ class Writer:
 
     # General shortcut to write a string to file
     def write(self, string):
-        self._file.write(string + '\n')
-
-    # Write first review to file
-    def write_review(self, review_id, user_id, date, stars, comment):
-        # Write the review to the opened file
-        self.write_review_to_file(review_id, user_id, date, stars, comment)
-        # Change method to indicate that file isn't empty
-        self.write_review = self.write_review_to_file
+        self._file.write(string + "\n")
 
     # Write review to file
-    def write_review_to_file(self, review_id, user_id, date, stars, comment):
-        self.write('\t'.join([review_id, user_id, date, str(stars), comment]))
+    def write_review(self, review_id, user_id, date, stars, comment):
+        self.write("\t".join([review_id, user_id, date, str(stars), comment]))
+        # File isn't empty anymore
+        self._empty = False
 
     # Write book meta data to file
     def write_book_meta(self, book_id, title, rating, author_id, name):
-        self.write('\t'.join([str(book_id), title, rating, author_id, name]))
+        self.write("\t".join([str(book_id), title, rating, author_id, name]))
 
     # General shortcut to close the file
     def close(self):
@@ -83,25 +78,18 @@ class Writer:
 
     # Flag file as empty or complete and close it
     def close_book_file(self):
-        # If write_review() is still equal to its backup, then file is empty
-        empty = self._write_review == self.write_review
-        # Restore write_review() from backup
-        self.write_review = self._write_review
         # Close file
         self.close()
         # If no reviews were added mark file as empty, otherwise mark it as complete
-        os.rename(self._file.name, self._path + ("C_", "E_")[empty] + self._file.name.split(self._path)[1])
+        os.rename(self._file.name, self._path + ("C_", "E_")[self._empty] + self._file.name.split(self._path)[1])
 
     # Read already scraped books to the array
     def read_books(self, file_name="books"):
-        books = []
-        if os.path.exists("./" + file_name + self._format):
-            self.open(file_name, 'r')
-            # Loop through all books ids from file
-            for book_id in self._file:
-                # Add book id to array without new line
-                books.append(book_id.replace('\n', ''))
+        if os.path.exists(f"./{file_name}{self._format}"):
+            # Open file and return books ids from it
+            self.open(file_name, "r")
+            books_ids = self._file.read().splitlines()
             self.close()
-        else:
-            print("Can't find file to read from!")
-        return books
+            return books_ids
+        print("Can't find file to read from!")
+        return []

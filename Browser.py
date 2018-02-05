@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
-# import needed libraries
-from selenium.webdriver import PhantomJS
+# Import needed libraries
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-
-'''# Remove the tipple quotations if using chrome is preferred
 # Download link: https://sites.google.com/a/chromium.org/chromedriver/downloads
 from selenium.webdriver import Chrome, ChromeOptions
 
@@ -15,21 +12,11 @@ from selenium.webdriver import Chrome, ChromeOptions
 class Browser(Chrome):
     def __init__(self):
         options = ChromeOptions()
+        # Disable Chrome's GUI
+        options.add_argument("--headless")
+        options.add_argument("--disable-gpu")
         options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
         Chrome.__init__(self, "./chromedriver.exe", chrome_options=options)
-        '''
-
-
-# A GoodReads specific PhantomJS browser class
-class Browser(PhantomJS):
-    def __init__(self):
-        """
-        Download the PhantomJS driver for your OS
-        from here: http://phantomjs.org/download.html
-        Extract it then point to it in the superclass
-        call below (instead of "./phantomjs")
-        """
-        PhantomJS.__init__(self, "./phantomjs")
         # Set page loading timeout to 25 seconds '''
         self.set_page_load_timeout(25)
 
@@ -47,21 +34,21 @@ class Browser(PhantomJS):
         # Try to open url until it succeeds
         while True:
             try:
-                self.get("https://www.goodreads.com" + sub_url + str(keyword) + options)
+                self.get(f"https://www.goodreads.com{sub_url}{keyword}{options}")
                 break
             # On connection timeout, loop again
             except TimeoutException:
                 print("Reloading page")
 
     # Shortcut to open GoodReads book page
-    def open_book_page(self, book_id, sort="newest"):
-        self.open("/book/show/", book_id, "?text_only=true&sort=" + sort)
+    def open_book_page(self, book_id):
+        self.open("/book/show/", book_id, "?text_only=true")
 
     # Shortcut to open GoodReads books list or shelf
     def open_page(self, keyword, browse):
         # URL contains "show" unless it's an author page
         method = "show" if browse != "author" else "list"
-        self.open('/' + browse + '/' + method + '/', keyword)
+        self.open(f"/{browse}/{method}/{keyword}")
 
     # Shortcut to open a GoodReads search page for books lists
     def open_list_search(self, keyword):
@@ -73,7 +60,7 @@ class Browser(PhantomJS):
             # Try to find the next button
             next_page = self.find_element_by_class_name("next_page")
             # Check if button is click-able (i.e. it's anchor tag)
-            if next_page.tag_name == 'a':
+            if next_page.tag_name == "a":
                 # Click the next page button
                 next_page.click()
                 return True
