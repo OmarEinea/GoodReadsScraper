@@ -17,10 +17,6 @@ class Reviews:
         self.wr = Writer()
         # Counter for reviews from different languages
         self._invalid = None
-        # Counter for current page number
-        self._page = None
-        # Array for possible 10th page ids
-        self._reviews_ids = set()
 
     # Scrape and write books' reviews to separate files
     def output_books_reviews(self, books_ids, consider_previous=True):
@@ -40,31 +36,26 @@ class Reviews:
         self.br.open_book_page(book_id)
         # Reset invalid reviews counter and page counter
         self._invalid = 0
-        self._page = 0
         # Scrape book meta data in first line
         self._scrape_book_meta(book_id, self.br.page_source)
         # Scrape first page of the book anyway
-        self._scrape_book_page(self.br.page_source)
+        self._scrape_book_reviews(self.br.page_source)
+        no_next_page = False
         # Scrape the remaining pages
         while self._invalid < 60:
             # Go to next page if there's one
-            if not self.br.goto_next_page():
-                # If there's a 10th page
-                if 1 + self._page == 10:
-                    # Order reviews from oldest and loop again
-                    # self.br.open_book_page(book_id)
-                    # TODO: Implement switch_to function
-                    print("Switching to order by oldest")
-                # Break if there's no next page
-                else:
+            if no_next_page or not self.br.goto_next_page():
+                no_next_page = False
+                # Switch to a different reviews mode
+                if not self.br.switch_reviews_mode(book_id):
+                    # Break after switching to all modes
                     break
-            # Moved to next page
-            self._page += 1
-            # Wait until next page is loaded
-            if self.br.is_page_loaded(1 + self._page % 10):
-                # Scrape book and break if it's completely done
-                if not self._scrape_book_page(self.br.page_source):
-                    break
+            # Wait until requested book reviews are loaded
+            if self.br.are_reviews_loaded():
+                # Scrape loaded book reviews
+                self._scrape_book_reviews(self.br.page_source)
+            else:
+                no_next_page = True
         # Finalize file name and close it
         self.wr.close_book_file()
 
@@ -96,13 +87,12 @@ class Reviews:
         print(f"*Book ID:\t{book_id:<15}Title:\t{title}")
 
     # Scrape a single page's reviews
-    def _scrape_book_page(self, html):
+    def _scrape_book_reviews(self, html):
         # Store reviews section of the page in soup
         soup = BeautifulSoup(html, "lxml").find(id="bookReviews")
         # Loop through reviews individually
         for review in soup.find_all(class_="review"):
-            try:
-                # Get user / reviewer id
+            try:  # Get user / reviewer id
                 user_id = review.find(class_="user").get("href")[11:].split("-")[0]
                 # Get rating out of five stars
                 stars = len(review.find(class_="staticStars").find_all(class_="p10"))
@@ -124,15 +114,6 @@ class Reviews:
             self._invalid = 0
             # Get review ID
             review_id = review.get("id")[7:]
-            # If it's the 10th page or passed it
-            if 1 + self._page >= 10:
-                # Store the 10th page reviews ids
-                if 1 + self._page == 10:
-                    self._reviews_ids.add(review_id)
-                # Check that reviews aren't repeating
-                elif review_id in self._reviews_ids:
-                    self._reviews_ids.clear()
-                    return False
             # Write the scraped review to the file
             self.wr.write_review(review_id, user_id, date, stars, comment)
             # Add review id to ids
@@ -140,5 +121,5 @@ class Reviews:
         return True
 
     def __del__(self):
-        self.br.close()
+        #self.br.close()
         print("Closed browser")

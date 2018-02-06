@@ -17,8 +17,9 @@ class Browser(Chrome):
         options.add_argument("--disable-gpu")
         options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
         Chrome.__init__(self, "./chromedriver.exe", chrome_options=options)
-        # Set page loading timeout to 25 seconds '''
-        self.set_page_load_timeout(25)
+        # Set page loading timeout to 30 seconds
+        self.set_page_load_timeout(30)
+        self.rating, self.sort = None, None
 
     # Login to Goodreads.com
     def login(self, email, password):
@@ -42,7 +43,9 @@ class Browser(Chrome):
 
     # Shortcut to open GoodReads book page
     def open_book_page(self, book_id):
-        self.open("/book/show/", book_id, "?text_only=true")
+        self.sort = 1
+        self.rating = 5
+        self.open("/book/show/", book_id, f"?text_only=true&rating={self.rating}")
 
     # Shortcut to open GoodReads books list or shelf
     def open_page(self, keyword, browse):
@@ -65,18 +68,44 @@ class Browser(Chrome):
                 next_page.click()
                 return True
         # Return false if there isn't one
-        except (NoSuchElementException, TimeoutException, WebDriverException):
+        except (NoSuchElementException, TimeoutException, WebDriverException) as error:
+            print(error)
             return False
 
-    # Return if next page is loaded
-    def is_page_loaded(self, page):
-        try:
-            # Let the driver wait until the current page indicator is active
-            WebDriverWait(self, 10).until(ec.text_to_be_present_in_element((By.CLASS_NAME, "current"), str(page)))
+    def switch_reviews_mode(self, book_id):
+        self.sort += 1
+        if self.sort > 2:
+            self.sort = 0
+            self.rating -= 1
+            if self.rating < 1:
+                return False
+        print(f"Rating: {self.rating} Stars, Sorted: {self._SORTS[self.sort].capitalize()}")
+        self.execute_script(
+            'document.getElementById("reviews").insertAdjacentHTML("beforeend", \'<a class="actionLinkLite'
+            ' loadingLink" rel="nofollow" data-keep-on-success="true" data-remote="true" id="switch"'
+            f'href="/book/reviews/{book_id}?text_only=true&rating={self.rating}&sort={self._SORTS[self.sort]}">'
+            'Switch Mode</a>\');'
+        )
+        self.find_element_by_id("switch").click()
+        return True
+
+    # Return whether reviews were loaded
+    def are_reviews_loaded(self):
+        try:  # Let the driver wait until the first review has disappeared
+            WebDriverWait(self, 10).until(
+                ec.invisibility_of_element_located((
+                    By.ID, self.find_element_by_xpath(
+                        "//*[contains(@class, 'firstReview')]//*[@class='readable']/span[1]"
+                    ).get_attribute("id")
+                ))
+            )
             return True
-        except TimeoutException:
+        except (TimeoutException, NoSuchElementException) as error:
+            print(error)
             return False
 
     # Get all links in page that has css class "XTitle"
     def links(self, title):
         return self.find_elements_by_class_name(title + "Title")
+
+    _SORTS = ["default", "newest", "oldest"]
