@@ -91,17 +91,16 @@ class Browser(Chrome):
 
     # Return whether reviews were loaded
     def are_reviews_loaded(self):
-        try:  # Let the driver wait until the first review has disappeared
-            WebDriverWait(self, 10).until(
-                ec.invisibility_of_element_located((
-                    By.ID, self.find_element_by_xpath(
-                        "//*[contains(@class, 'firstReview')]//*[@class='readable']/span[1]"
-                    ).get_attribute("id")
-                ))
-            )
-            return True
+        # Add a dummy "loading" tag to DOM
+        self.execute_script(
+            'document.getElementById("reviews").insertAdjacentHTML("beforeend", \'<p id="load_reviews">loading</p>\');'
+        )
+        try:  # Let the driver wait until the the dummy tag has disappeared
+            WebDriverWait(self, 15).until(ec.invisibility_of_element_located((By.ID, "load_reviews")))
+            # Return true if reviews are loaded and they're more that 0, otherwise return false
+            return len(self.find_element_by_id("bookReviews").find_elements_by_class_name("review")) > 0
         except (TimeoutException, NoSuchElementException) as error:
-            print(error)
+            print("Error:", error)
             return False
 
     # Get all links in page that has css class "XTitle"

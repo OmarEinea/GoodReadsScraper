@@ -81,7 +81,7 @@ class Writer:
         # Close file
         self.close()
         # If no reviews were added mark file as empty, otherwise mark it as complete
-        os.rename(self._file.name, self._path + ("C_", "E_")[self._empty] + self._file.name.split(self._path)[1])
+        os.replace(self._file.name, self._path + ("C_", "E_")[self._empty] + self._file.name.split(self._path)[1])
 
     # Read already scraped books to the array
     def read_books(self, file_name="books"):
