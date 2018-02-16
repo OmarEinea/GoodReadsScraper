@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from langdetect import detect
 from Browser import Browser
 from Writer import Writer
+from threading import Thread
 
 
 # A class to Scrape books Reviews from GoodReads.com
@@ -37,9 +38,9 @@ class Reviews:
         # Reset invalid reviews counter and page counter
         self._invalid = 0
         # Scrape book meta data in first line
-        self._scrape_book_meta(book_id, self.br.page_source)
+        self.run(self._scrape_book_meta, [book_id])
         # Scrape first page of the book anyway
-        self._scrape_book_reviews(self.br.page_source)
+        self.run(self._scrape_book_reviews)
         no_next_page = False
         # Scrape the remaining pages
         while self._invalid < 60:
@@ -53,14 +54,14 @@ class Reviews:
             # Wait until requested book reviews are loaded
             if self.br.are_reviews_loaded():
                 # Scrape loaded book reviews
-                self._scrape_book_reviews(self.br.page_source)
+                self.run(self._scrape_book_reviews)
             else:
                 no_next_page = True
         # Finalize file name and close it
         self.wr.close_book_file()
 
     # Scrape and write book and author data
-    def _scrape_book_meta(self, book_id, html):
+    def _scrape_book_meta(self, html, book_id):
         # Create soup object from page html
         soup = BeautifulSoup(html, "lxml")
         # Store book meta section of the page in soup unless book not available
@@ -119,6 +120,10 @@ class Reviews:
             # Add review id to ids
             print(f"Added ID:\t{review_id}")
         return True
+
+    # Starts a scraping process on a new thread
+    def run(self, method, args=[]):
+        Thread(target=method, args=[self.br.page_source] + args).start()
 
     def __del__(self):
         #self.br.close()
