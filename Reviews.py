@@ -123,8 +123,17 @@ class Reviews:
 
     # Starts a scraping process on a new thread
     def run(self, method, args=[]):
-        Thread(target=method, args=[self.br.page_source] + args).start()
+        SafeThread(target=method, args=[self.br.page_source] + args).start()
 
     def __del__(self):
-        #self.br.close()
+        self.br.close()
         print("Closed browser")
+
+
+class SafeThread(Thread):
+    def run(self):
+        try:
+            Thread.run(self)
+        except AttributeError:
+            Thread.join(self)
+            raise AttributeError
