@@ -19,7 +19,8 @@ class Browser(Chrome):
         Chrome.__init__(self, "./chromedriver.exe", chrome_options=options)
         # Set page loading timeout to 30 seconds
         self.set_page_load_timeout(30)
-        self.rating, self.sort = None, None
+        # Initialize browsing counters
+        self.rating, self.sort, self.fails = None, None, 0
 
     # Login to Goodreads.com
     def login(self, email, password):
@@ -43,9 +44,10 @@ class Browser(Chrome):
 
     # Shortcut to open GoodReads book page
     def open_book_page(self, book_id):
-        self.sort = 1
+        self.sort = 0
         self.rating = 5
         self.open("/book/show/", book_id, f"?text_only=true&rating={self.rating}")
+        print(f"Rating: {self.rating} Stars, Sorted: {self._SORTS[self.sort].capitalize()}")
 
     # Shortcut to open GoodReads books list or shelf
     def open_page(self, keyword, browse):
@@ -74,7 +76,7 @@ class Browser(Chrome):
 
     def switch_reviews_mode(self, book_id):
         self.sort += 1
-        if self.sort > 2:
+        if self.sort >= 2:
             self.sort = 0
             self.rating -= 1
             if self.rating < 1:
@@ -97,10 +99,15 @@ class Browser(Chrome):
         )
         try:  # Let the driver wait until the the dummy tag has disappeared
             WebDriverWait(self, 15).until(ec.invisibility_of_element_located((By.ID, "load_reviews")))
+            self.fails = 0
             # Return true if reviews are loaded and they're more that 0, otherwise return false
             return len(self.find_element_by_id("bookReviews").find_elements_by_class_name("review")) > 0
-        except (TimeoutException, NoSuchElementException) as error:
+        except Exception as error:
             print("Error:", error)
+            # If reviews loading fails 3 times, raise an error
+            self.fails += 1
+            if self.fails == 3:
+                raise ConnectionError
             return False
 
     # Get all links in page that has css class "XTitle"
