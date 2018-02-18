@@ -83,13 +83,3 @@ class Writer:
         # If no reviews were added mark file as empty, otherwise mark it as complete
         os.replace(self._file.name, self._path + ("C_", "E_")[self._empty] + self._file.name.split(self._path)[1])
 
-    # Read already scraped books to the array
-    def read_books(self, file_name="books"):
-        if os.path.exists(f"./{file_name}{self._format}"):
-            # Open file and return books ids from it
-            self.open(file_name, "r")
-            books_ids = self._file.read().splitlines()
-            self.close()
-            return books_ids
-        print("Can't find file to read from!")
-        return []

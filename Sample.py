@@ -2,8 +2,10 @@
 
 # from Books import Books
 from Reviews import Reviews
+from Tools import read_books
 from time import sleep
 # from Manager import *
+
 if __name__ == '__main__':
 
     # >>> Create books object and get all books shelved as "arabic"
@@ -15,7 +17,7 @@ if __name__ == '__main__':
     count = 0
     while True:
         try:
-            r.output_books_reviews(r.wr.read_books("books"))
+            r.output_books_reviews(read_books())
             break
         # If connection is stuck, refresh reviews object
         except AttributeError as e:
@@ -31,6 +33,7 @@ if __name__ == '__main__':
         except FileNotFoundError:
             pass
 
+    print("Connection was stuck", count, "times!")
     # delete_repeated_reviews()
     # combine_reviews()
     # split_reviews(5)

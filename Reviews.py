@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 # import needed libraries
+from Tools import SafeThread
 from bs4 import BeautifulSoup
 from langdetect import detect
 from Browser import Browser
 from Writer import Writer
-from threading import Thread
 
 
 # A class to Scrape books Reviews from GoodReads.com
@@ -125,15 +125,7 @@ class Reviews:
     def run(self, method, args=[]):
         SafeThread(target=method, args=[self.br.page_source] + args).start()
 
-    def __del__(self):
+    def close(self):
         self.br.close()
-        print("Closed browser")
-
-
-class SafeThread(Thread):
-    def run(self):
-        try:
-            Thread.run(self)
-        except AttributeError:
-            Thread.join(self)
-            raise AttributeError
+        self.wr.close()
+        print("Closed Reviews")

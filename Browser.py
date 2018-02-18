@@ -93,11 +93,12 @@ class Browser(Chrome):
 
     # Return whether reviews were loaded
     def are_reviews_loaded(self):
-        # Add a dummy "loading" tag to DOM
-        self.execute_script(
-            'document.getElementById("reviews").insertAdjacentHTML("beforeend", \'<p id="load_reviews">loading</p>\');'
-        )
-        try:  # Let the driver wait until the the dummy tag has disappeared
+        try:  # Add a dummy "loading" tag to DOM
+            self.execute_script(
+                'document.getElementById("reviews").'
+                'insertAdjacentHTML("beforeend", \'<p id="load_reviews">loading</p>\');'
+            )
+            # Let the driver wait until the the dummy tag has disappeared
             WebDriverWait(self, 15).until(ec.invisibility_of_element_located((By.ID, "load_reviews")))
             self.fails = 0
             # Return true if reviews are loaded and they're more that 0, otherwise return false
