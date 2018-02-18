@@ -37,6 +37,8 @@ class Browser(Chrome):
         while True:
             try:
                 self.get(f"https://www.goodreads.com{sub_url}{keyword}{options}")
+                if not self.current_url.endswith(options):
+                    raise NameError(self.current_url.rsplit("/", 1)[-1])
                 break
             # On connection timeout, loop again
             except TimeoutException:

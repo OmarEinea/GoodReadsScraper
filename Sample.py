@@ -20,8 +20,8 @@ if __name__ == '__main__':
             r.output_books_reviews(read_books())
             break
         # If connection is stuck, refresh reviews object
-        except AttributeError as e:
-            r.br.close()
+        except (AttributeError, ConnectionError) as e:
+            r.close()
             del r
             print("Refreshing Reviews Object because: " + str(e))
             count += 1

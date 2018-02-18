@@ -83,3 +83,6 @@ class Writer:
         # If no reviews were added mark file as empty, otherwise mark it as complete
         os.replace(self._file.name, self._path + ("C_", "E_")[self._empty] + self._file.name.split(self._path)[1])
 
+    def delete_file(self):
+        self.close()
+        os.remove(self._file.name)

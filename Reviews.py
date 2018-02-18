@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # import needed libraries
-from Tools import SafeThread
+from Tools import SafeThread, write_books, read_books
 from bs4 import BeautifulSoup
 from langdetect import detect
 from Browser import Browser
@@ -28,7 +28,16 @@ class Reviews:
         print(f"Scraping {len(books_ids)} Books")
         # Loop through book ids in array and scrape books
         for book_id in books_ids:
-            self.output_book_reviews(book_id)
+            try:
+                self.output_book_reviews(book_id)
+            except NameError as new_id:
+                ids = read_books()
+                ids[ids.index(book_id)] = new_id.args[0]
+                write_books(ids)
+                self.wr.delete_file()
+                raise ConnectionError("Failed to redirect to book URL")
+            except Exception:
+                pass
 
     # Scrape and write one book's reviews to a file
     def output_book_reviews(self, book_id):
