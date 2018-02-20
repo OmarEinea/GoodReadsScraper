@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 # Download link: https://sites.google.com/a/chromium.org/chromedriver/downloads
 from selenium.webdriver import Chrome, ChromeOptions
+from Tools import write_books, read_books, id_from_url
 
 
 class Browser(Chrome):
@@ -16,7 +17,7 @@ class Browser(Chrome):
         options.add_argument("--headless")
         options.add_argument("--disable-gpu")
         options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
-        Chrome.__init__(self, "./chromedriver.exe", chrome_options=options)
+        Chrome.__init__(self, chrome_options=options)
         # Set page loading timeout to 30 seconds
         self.set_page_load_timeout(30)
         # Initialize browsing counters
@@ -37,8 +38,6 @@ class Browser(Chrome):
         while True:
             try:
                 self.get(f"https://www.goodreads.com{sub_url}{keyword}{options}")
-                if not self.current_url.endswith(options):
-                    raise NameError(self.current_url.rsplit("/", 1)[-1])
                 break
             # On connection timeout, loop again
             except TimeoutException:
@@ -49,6 +48,15 @@ class Browser(Chrome):
         self.sort = 0
         self.rating = 5
         self.open("/book/show/", book_id, f"?text_only=true&rating={self.rating}")
+        # Get book id from URL
+        url_id = id_from_url.match(self.current_url).group(1)
+        # If a book id redirect happened
+        if book_id != url_id:
+            # Update new book id in books.txt
+            ids = read_books()
+            ids[ids.index(book_id)] = url_id
+            write_books(ids)
+            raise ConnectionResetError(f"Redirect book id from {book_id} to {url_id}")
         print(f"Rating: {self.rating} Stars, Sorted: {self._SORTS[self.sort].capitalize()}")
 
     # Shortcut to open GoodReads books list or shelf
@@ -72,7 +80,7 @@ class Browser(Chrome):
                 next_page.click()
                 return True
         # Return false if there isn't one
-        except (NoSuchElementException, TimeoutException, WebDriverException) as error:
+        except Exception as error:
             print(error)
             return False
 
