@@ -7,18 +7,13 @@
 # Igonre all reviews output files and folder
 #
 *.csv
-BooksReviews
+*Reviews/
+Dialects/
 
 #
 # Ignore PyCharm IDE project folder
 #
 .idea
-
-#
-# Ignore PhantomJS Driver and Log files
-#
-phantomjs*
-ghostdriver.log
 
 #
 # Ignore Chrome Driver

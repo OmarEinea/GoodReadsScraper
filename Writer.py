@@ -74,7 +74,8 @@ class Writer:
 
     # General shortcut to close the file
     def close(self):
-        self._file.close()
+        if self._file:
+            self._file.close()
 
     # Flag file as empty or complete and close it
     def close_book_file(self):

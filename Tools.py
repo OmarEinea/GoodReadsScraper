@@ -1,4 +1,7 @@
 from threading import Thread
+import re
+
+id_from_url = re.compile(r"^.+/([0-9]+).*$")
 
 
 class SafeThread(Thread):
