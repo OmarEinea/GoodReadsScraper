@@ -16,6 +16,7 @@ class Reviews:
         # Browsing and writing managers
         self.br = Browser()
         self.wr = Writer()
+        self.threads = []
         # Counter for reviews from different languages
         self._invalid = None
 
@@ -41,9 +42,10 @@ class Reviews:
 
     # Scrape and write one book's reviews to a file
     def output_book_reviews(self, book_id):
+        self.threads.clear()
         # Open book file and page by its Id
-        self.wr.open_book_file(book_id)
         self.br.open_book_page(book_id)
+        self.wr.open_book_file(book_id)
         # Reset invalid reviews counter and page counter
         self._invalid = 0
         # Scrape book meta data in first line
@@ -66,6 +68,8 @@ class Reviews:
                 self.run(self._scrape_book_reviews)
             else:
                 no_next_page = True
+        # Wait until all threads are done
+        [thread.join() for thread in self.threads]
         # Finalize file name and close it
         self.wr.close_book_file()
 
@@ -132,7 +136,9 @@ class Reviews:
 
     # Starts a scraping process on a new thread
     def run(self, method, args=[]):
-        SafeThread(target=method, args=[self.br.page_source] + args).start()
+        # Create a thread and add it to threads list then start it
+        self.threads.append(SafeThread(target=method, args=[self.br.page_source] + args))
+        self.threads[-1].start()
 
     def close(self):
         self.br.close()
