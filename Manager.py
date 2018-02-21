@@ -9,31 +9,46 @@ path = "./BooksReviews/"
 
 # Combine all scraped reviews in one file
 def combine_reviews():
-    files = []
-    append = files.append
+    # Declare arrays and pointers to their add functions
+    files, ids, bodies = [], set(), set()
+    append, add_id, add_body = files.append, ids.add, bodies.add
     # Loop through all files in path
     for file in os.listdir(path):
         # If file is complete
         if file[0] == 'C':
             # Read file lines and store them
-            lines = open(path + file, 'r').readlines()
+            lines = open(path + file, encoding='utf-8').readlines()
             append((len(lines) - 1, lines))
     # Combine books titles in this file
-    write_books = open("books.csv", "w+").write
+    write_books = open(path + "books.csv", "w+", encoding='utf-8').write
     # Combine reviews in this file
-    write_reviews = open("reviews.csv", "w+").write
+    write_reviews = open(path + "reviews.csv", "w+", encoding='utf-8').write
     # Sort files from largest to smallest and loop through them
     for file in sorted(files, reverse=True):
-        # Write first line to books.txt
-        write_books(file[1][0])
-        book = file[1][0].split('\t')
-        book_id = book[0]
-        author_id = book[3]
-        # Loop through the reset of the lines
-        for line in file[1][1:]:
-            review = line.split('\t', 2)
-            # Write the reset of line to reviews.txt
-            write_reviews(review[0] + '\t' + review[1] + '\t' + book_id + '\t' + author_id + '\t' + review[2])
+        reviews = file[1]
+        # Loop through all file lines
+        for i in range(len(reviews)):
+            reviews[i] = reviews[i].split('\t', 2)
+            # If review is book's description (i.e. third cell is rating not date)
+            if reviews[i][2][0].isdigit():
+                # Store book description line index
+                book_index = i
+        # Copy book description line index and write it to books.csv
+        book = reviews[book_index][:]
+        write_books('\t'.join(book))
+        # Split the rest of its cells
+        book[2:] = book[2].split('\t')
+        book_id, author_id = book[0], book[3]
+        # Delete it from file lines (keeping reviews only)
+        del reviews[book_index]
+        # Loop through the reviews
+        for review in reviews:
+            # Make sure review id isn't repeated
+            id_ = review[0]
+            if id_ not in ids:
+                # Add it to array and write it to file
+                add_id(id_)
+                write_reviews('\t'.join([id_, review[1], book_id, author_id, review[2].replace("\u2028", ". ")]))
 
 
 # Split the reviews from one file into n files
@@ -75,7 +90,7 @@ def count_files_lines(from_file=None):
 
 # Delete all repeated reviews
 def delete_repeated_reviews():
-    count = 0
+    repeated = 0
     invalid = 0
     ids = set()
     add_id = ids.add
@@ -112,9 +127,9 @@ def delete_repeated_reviews():
                     if review not in reviews:
                         add_rev(review)
                         f_write(line.replace("\u2028", ". "))
-                # If it's repeated or invalid, count it
+                # If it's repeated, count it
                 else:
-                    count += 1
+                    repeated += 1
             f.close()
             # If some files became empty after deleting
             if len(open(dir_, 'r').readlines()) < 2:
@@ -123,7 +138,7 @@ def delete_repeated_reviews():
     # Display counts and return all reviews ids
     print("Total Non-Repeated:\t" + str(len(reviews)))
     print("Total Invalid By Cells:\t" + str(invalid))
-    print("Total Repeated By ID:\t" + str(count))
+    print("Total Repeated By ID:\t" + str(repeated))
     print("Total Repeated By Text:\t" + str(len(ids) - len(reviews)))
     return ids
 
@@ -134,3 +149,20 @@ def get_empty_files():
         # Only count completed files
         if file[0] == 'E':
             write_empty(file[2:-4] + '\n')
+
+
+def compare_two_files(file1, file2):
+    with open(file1, encoding='utf-8') as file1, open(file2, encoding='utf-8') as file2:
+        reviews1 = file1.readlines()
+        reviews2 = file2.readlines()
+        count = 0
+        ids = set(review.split('\t', 1)[0] for review in reviews1)
+        for review in reviews2:
+            review_id = review.split('\t', 1)[0]
+            if review_id not in ids:
+                ids.add(review_id)
+            else:
+                count += 1
+        print("Repeated Reviews:", count)
+        print("Unique Reviews in First File:", len(reviews1) - count)
+        print("Unique Reviews in Second File:", len(reviews2) - count)
