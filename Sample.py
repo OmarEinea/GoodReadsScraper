@@ -4,7 +4,7 @@
 from Reviews import Reviews
 from Tools import read_books
 from time import sleep
-# from Manager import *
+# from Tools import *
 
 if __name__ == '__main__':
 
@@ -29,9 +29,9 @@ if __name__ == '__main__':
             if count % 3 == 0:
                 sleep(800)
             r = Reviews()
-        # If book is not found, just skip it
-        except FileNotFoundError:
-            pass
+        # If an error occurs
+        except Exception as e:
+            print("Error:", str(e))
 
     print("Connection was stuck", count, "times!")
     # delete_repeated_reviews()

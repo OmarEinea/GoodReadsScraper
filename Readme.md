@@ -88,7 +88,7 @@ Import needed modules:
 ```python
 from Books import Books
 from Reviews import Reviews
-from Manager import *
+from Tools import *
 ```
 
 Scrape books ids from books shelved as "arabic":
