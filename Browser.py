@@ -1,27 +1,32 @@
 #!/usr/bin/env python
 
-# Import needed libraries
+# Download link: https://sites.google.com/a/chromium.org/chromedriver/downloads
+from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-# Download link: https://sites.google.com/a/chromium.org/chromedriver/downloads
-from selenium.webdriver import Chrome, ChromeOptions
+from selenium.common.exceptions import TimeoutException
 from Tools import write_books, read_books, id_from_url
 
 
 class Browser(Chrome):
-    def __init__(self):
-        options = ChromeOptions()
+    OPTIONS = {"goog:chromeOptions": {
+        # Disable images loading
+        "prefs": {"profile.managed_default_content_settings.images": 2},
         # Disable Chrome's GUI
-        options.add_argument("--headless")
-        options.add_argument("--disable-gpu")
-        options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
-        Chrome.__init__(self, chrome_options=options)
+        "args": ["--headless", "--disable-gpu"]
+    }}
+
+    def __init__(self):
+        Chrome.__init__(self, desired_capabilities=self.OPTIONS)
         # Set page loading timeout to 30 seconds
         self.set_page_load_timeout(30)
         # Initialize browsing counters
-        self.rating, self.sort, self.fails = None, None, 0
+        self.rating = self.sort = self.fails = None
+
+    # Starts browser window
+    def start(self):
+        self.start_session(self.OPTIONS)
 
     # Login to Goodreads.com
     def login(self, email, password):
@@ -79,14 +84,15 @@ class Browser(Chrome):
                 # Click the next page button
                 next_page.click()
                 return True
-        # Return false if there isn't one
+            return False
+        # Return none if there isn't one
         except Exception as error:
             print(error)
-            return False
+            return None
 
-    def switch_reviews_mode(self, book_id):
+    def switch_reviews_mode(self, book_id, only_default=False):
         self.sort += 1
-        if self.sort >= 2:
+        if self.sort > 2 or only_default:
             self.sort = 0
             self.rating -= 1
             if self.rating < 1:
@@ -122,7 +128,7 @@ class Browser(Chrome):
             return False
 
     # Get all links in page that has css class "XTitle"
-    def links(self, title):
+    def titles_links(self, title):
         return self.find_elements_by_class_name(title + "Title")
 
     _SORTS = ["default", "newest", "oldest"]
