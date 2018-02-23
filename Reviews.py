@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-# import needed libraries
 from Tools import SafeThread
 from bs4 import BeautifulSoup
 from langdetect import detect
@@ -10,15 +9,19 @@ from Writer import Writer
 
 # A class to Scrape books Reviews from GoodReads.com
 class Reviews:
-    def __init__(self, lang="ar"):
+    def __init__(self, path=None, lang="ar"):
         # Language of reviews to be scraped
-        self.lang = lang
-        # Browsing and writing managers
+        self._lang = lang
+        # Instantiate browsing and writing managers
+        self.wr = Writer(path) if path else Writer()
         self.br = Browser()
-        self.wr = Writer()
-        self.threads = []
+        # Initialize an empty threads list
+        self._threads = []
         # Counter for reviews from different languages
         self._invalid = None
+
+    def start(self):
+        self.br.start()
 
     # Scrape and write books' reviews to separate files
     def output_books_reviews(self, books_ids, consider_previous=True):
@@ -33,7 +36,7 @@ class Reviews:
 
     # Scrape and write one book's reviews to a file
     def output_book_reviews(self, book_id):
-        self.threads.clear()
+        self._threads.clear()
         # Open book file and page by its Id
         self.br.open_book_page(book_id)
         self.wr.open_book_file(book_id)
@@ -47,10 +50,11 @@ class Reviews:
         # Scrape the remaining pages
         while self._invalid < 60:
             # Go to next page if there's one
-            if no_next_page or not self.br.goto_next_page():
+            in_next_page = self.br.goto_next_page()
+            if no_next_page or not in_next_page:
                 no_next_page = False
                 # Switch to a different reviews mode
-                if not self.br.switch_reviews_mode(book_id):
+                if not self.br.switch_reviews_mode(book_id, in_next_page is None):
                     # Break after switching to all modes
                     break
             # Wait until requested book reviews are loaded
@@ -60,18 +64,16 @@ class Reviews:
             else:
                 no_next_page = True
         # Wait until all threads are done
-        [thread.join() for thread in self.threads]
+        [thread.join() for thread in self._threads]
         # Finalize file name and close it
         self.wr.close_book_file()
 
     # Scrape and write book and author data
     def _scrape_book_meta(self, html, book_id):
-        # Create soup object from page html
-        soup = BeautifulSoup(html, "lxml")
-        # Store book meta section of the page in soup unless book not available
-        soup = soup.find(id="metacol") or soup.find(class_="errorBox").get_text().strip()
+        # Create soup object and store book meta section of the page in soup
+        soup = BeautifulSoup(html, "lxml").find(id="metacol")
         # If book is not found
-        if soup == "Could not find this book.":
+        if not soup:
             print(f"*Book ID:\t{book_id:<15}Not Found!")
             # Close file and raise an error
             self.wr.close_book_file()
@@ -104,7 +106,7 @@ class Reviews:
                 # Get full review text even the hidden parts, and remove spaces and newlines
                 comment = review.find(class_="readable").find_all("span")[-1].get_text(". ", strip=True)
                 # Detect which language the review is in
-                if detect(comment) != self.lang:
+                if detect(comment) != self._lang:
                     # Count it as a different language review
                     self._invalid += 1
                     continue
@@ -128,10 +130,16 @@ class Reviews:
     # Starts a scraping process on a new thread
     def run(self, method, args=[]):
         # Create a thread and add it to threads list then start it
-        self.threads.append(SafeThread(target=method, args=[self.br.page_source] + args))
-        self.threads[-1].start()
+        self._threads.append(SafeThread(target=method, args=[self.br.page_source] + args))
+        self._threads[-1].start()
+
+    def stop(self):
+        self.br.close()
+        self.wr.delete_file()
+        print("Stopped Reviews")
 
     def close(self):
-        self.br.close()
+        self.br.quit()
         self.wr.close()
+        self._threads.clear()
         print("Closed Reviews")
