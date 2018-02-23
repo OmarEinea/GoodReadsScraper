@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 
-# import needed libraries
-import codecs
-import os
+import codecs, os
 
 
 # A class to Write Books and Reviews from GoodReads.com to files
 class Writer:
-    def __init__(self):
+    def __init__(self, path="./BooksReviews/"):
         # File to write book reviews in
         self._file = None
         # Path to write files in
-        self._path = "./BooksReviews/"
+        self._path = path
         # Output file format
         self._format = ".txt"
         # Flag whether file is empty
@@ -33,7 +31,7 @@ class Writer:
             # If file starts with C_ or E_
             if not file[0].isdigit():
                 # Try to remove it from array
-                if file[2:-4] in array:
+                while file[2:-4] in array:
                     array.remove(file[2:-4])
         if os.path.exists("empty.txt"):
             for file in open("empty.txt", "r").readlines():
@@ -47,16 +45,19 @@ class Writer:
 
     # General shortcut to open a file for writing
     def open(self, name, key="w", path="./"):
-        self._file = codecs.open(path + name + self._format, key, "utf-8")
+        self._file = codecs.open(f"{path}{name}{self._format}", key, "utf-8")
 
     # Open file to write book reviews
     def open_book_file(self, name):
         self._prepare_path()
         # Delete file if it already exists
-        if os.path.exists(self._path + str(name) + self._format):
-            os.remove(self._path + str(name) + self._format)
+        file_name = f"{self._path}{name}{self._format}"
+        if os.path.exists(file_name):
+            os.remove(file_name)
         # Open the book reviews file with utf-8 encoding
-        self.open(str(name), "a+", self._path)
+        self.open(name, "a+", self._path)
+        # Consider file empty at the beginning
+        self._empty = True
 
     # General shortcut to write a string to file
     def write(self, string):
@@ -82,7 +83,8 @@ class Writer:
         # Close file
         self.close()
         # If no reviews were added mark file as empty, otherwise mark it as complete
-        os.replace(self._file.name, self._path + ("C_", "E_")[self._empty] + self._file.name.split(self._path)[1])
+        name, i = self._file.name, len(self._path)
+        os.replace(name, name[:i] + ("C_", "E_")[self._empty] + name[i:])
 
     def delete_file(self):
         self.close()

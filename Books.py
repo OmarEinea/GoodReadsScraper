@@ -3,6 +3,7 @@
 # import needed libraries
 from Browser import Browser
 from Writer import Writer
+from Tools import id_from_url
 
 
 # A class to Search then Scrape lists and books from GoodReads.com
@@ -24,7 +25,7 @@ class Books:
 
     # Scrape books and write them to a file (browse is: list, lists, author or shelf)
     def output_books(self, keyword=None, browse="list", file_name="books"):
-        self.wr.open(file_name)
+        self.wr.open(file_name, "w+")
         # Get books if keyword is provided, otherwise output stored books
         books_ids = self.get_books(keyword, browse) if keyword else self._books_ids
         # Loop through book ids and write them
@@ -68,15 +69,14 @@ class Books:
         return lists
 
     # Scrape a single search results page
-    def _scrape_list(self, title, array):
+    def _scrape_list(self, title_of, array):
         # Loop through all link that start with sub_url
-        for link in self.br.links(title):
-            try:
-                # Get id from url
-                id_ = link.get_attribute("href")[36:].split('.')[0].split('-')[0]
-            except:
+        for link in self.br.titles_links(title_of):
+            try:  # Get id from url
+                id_ = id_from_url.match(link.get_attribute("href")).group(1)
+            except Exception:
                 continue
             # Extract and store unique id from link
             if id_ not in array:
                 array.append(id_)
-                print(title + '\t' + "%-12s" % id_ + "count:\t" + str(len(array)))
+                print(f"{title_of.capitalize()} {id_:<10}count:\t{len(array)}")
