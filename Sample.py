@@ -20,20 +20,20 @@ if __name__ == '__main__':
             r.output_books_reviews(read_books())
             break
         # If connection is stuck, refresh reviews object
-        except (AttributeError, ConnectionError) as e:
-            r.close()
-            del r
-            print("Refreshing Reviews Object because: " + str(e))
+        except (AttributeError, ConnectionError, PermissionError) as e:
+            print("Resetting Reviews object because:", e)
+            r.stop()
             count += 1
             # Every three times this happens, wait a bit
             if count % 3 == 0:
-                sleep(800)
-            r = Reviews()
+                sleep(120)
+            r.start()
         # If an error occurs
         except Exception as e:
             print("Error:", str(e))
 
-    print("Connection was stuck", count, "times!")
+    r.close()
+    print("Done!")
     # delete_repeated_reviews()
     # combine_reviews()
     # split_reviews(5)

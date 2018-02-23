@@ -3,7 +3,7 @@
 from threading import Thread
 import re, os
 
-id_from_url = re.compile(r"^.+/([0-9]+).*$")
+id_from_url = re.compile(r"^.*/([0-9]+).*$")
 # Root path of reviews
 path = "./BooksReviews/"
 
@@ -176,14 +176,8 @@ def compare_two_files(file1, file2):
     with open(file1, encoding='utf-8') as file1, open(file2, encoding='utf-8') as file2:
         reviews1 = file1.readlines()
         reviews2 = file2.readlines()
-        count = 0
-        ids = set(review.split('\t', 1)[0] for review in reviews1)
-        for review in reviews2:
-            review_id = review.split('\t', 1)[0]
-            if review_id not in ids:
-                ids.add(review_id)
-            else:
-                count += 1
-        print("Repeated Reviews:", count)
-        print("Unique Reviews in First File:", len(reviews1) - count)
-        print("Unique Reviews in Second File:", len(reviews2) - count)
+        reviews_ids = set(review.split('\t', 1)[0] for review in reviews1 + reviews2)
+        print("Total Reviews:", len(reviews_ids))
+        print("Repeated Reviews:", len(reviews1) + len(reviews2) - len(reviews_ids))
+        print("Unique Reviews in First File:", len(reviews_ids) - len(reviews2))
+        print("Unique Reviews in Second File:", len(reviews_ids) - len(reviews1))
