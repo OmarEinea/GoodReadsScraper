@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
 # import needed libraries
-from Browser import Browser
 from Writer import Writer
+from Browser import Browser
 from Tools import id_from_url
 
 
 # A class to Search then Scrape lists and books from GoodReads.com
 class Books:
-    def __init__(self):
+    def __init__(self, path=None):
         # Browsing and writing managers
         self.br = Browser()
-        self.wr = Writer()
+        self.wr = Writer(path) if path else Writer()
         # An array for scrapped books
         self._books_ids = []
 
@@ -32,6 +32,20 @@ class Books:
         for book_id in books_ids:
             self.wr.write(book_id)
         self.wr.close()
+
+    def output_books_editions(self, books_ids=None, file_name="editions"):
+        self.wr.open(file_name, "a+")
+        # Loop through book ids and write their editions id
+        for book_id in books_ids or self._books_ids:
+            editions_id = self.get_book_editions_id(book_id)
+            # Editions id is None when page refuses to load
+            if editions_id is None: return self.wr.close()
+            # Write editions id to file if it loads correctly
+            self.wr.write(editions_id or "-"*7)
+            # Display book id and editions id
+            print(f"Book ID:\t{book_id:<15}Book Editions ID:\t{editions_id}")
+        self.wr.close()
+        return True
 
     # Main function to scrape books ids
     def get_books(self, keyword, browse="list"):
@@ -80,3 +94,7 @@ class Books:
             if id_ not in array:
                 array.append(id_)
                 print(f"{title_of.capitalize()} {id_:<10}count:\t{len(array)}")
+
+    def get_book_editions_id(self, book_id):
+        self.br.open("/book/show/", book_id)
+        return self.br.editions_id()

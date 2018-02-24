@@ -5,7 +5,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from Tools import write_books, read_books, id_from_url
 
 
@@ -130,5 +130,17 @@ class Browser(Chrome):
     # Get all links in page that has css class "XTitle"
     def titles_links(self, title):
         return self.find_elements_by_class_name(title + "Title")
+
+    def editions_id(self):
+        try:  # To find a the parent tag (to check whether page loaded)
+            editions = self.find_element_by_class_name("otherEditions")
+        except NoSuchElementException:
+            return None
+        try:  # To find child link tag (to check whether it has other editions)
+            return id_from_url.match(
+                editions.find_element_by_tag_name("a").get_attribute("href")
+            ).group(1)
+        except NoSuchElementException:
+            return False
 
     _SORTS = ["default", "newest", "oldest"]
