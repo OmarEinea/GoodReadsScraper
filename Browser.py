@@ -48,6 +48,9 @@ class Browser(Chrome):
             except TimeoutException:
                 print("Reloading page")
 
+    def open_book_editions(self, book_id):
+        self.open(f"/work/editions/{book_id}?expanded=true&sort=title")
+
     # Shortcut to open GoodReads book page
     def open_book_page(self, book_id):
         self.sort = 0

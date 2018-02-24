@@ -3,7 +3,8 @@
 # import needed libraries
 from Writer import Writer
 from Browser import Browser
-from Tools import id_from_url
+from Tools import id_from_url, read_books
+from bs4 import BeautifulSoup
 
 
 # A class to Search then Scrape lists and books from GoodReads.com
@@ -47,6 +48,29 @@ class Books:
         self.wr.close()
         return True
 
+    def output_books_edition_by_language(self, editions_ids, lang="Arabic", file_name="ara_books"):
+        self.wr.open(file_name, "a+")
+        # Loop through book ids and write their editions id
+        for editions_id in editions_ids:
+            books_ids = self.get_book_edition_by_language(editions_id, lang) if editions_id.isdigit() else ''
+            # Editions id is None when page refuses to load
+            if books_ids is None: return self.wr.close()
+            # Write editions id to file if it loads correctly
+            self.wr.write(books_ids or "-"*7)
+            # Display book id and editions id
+            print(f"Book Editions ID:\t{editions_id:<15}Books IDs:\t{books_ids}")
+        self.wr.close()
+        # Open a new file to move done list to it
+        self.wr.open(file_name + "_list")
+        # Loop through previously scraped editions ids
+        for line in read_books(file_name):
+            # If line isn't empty
+            if line != "-"*7:
+                # Write each book edition id in a separate line
+                [self.wr.write(id_) for id_ in line.split(',')]
+        self.wr.close()
+        return True
+
     # Main function to scrape books ids
     def get_books(self, keyword, browse="list"):
         # Replace spaces with '+' for a valid url
@@ -68,6 +92,23 @@ class Books:
                 if not self.br.goto_next_page():
                     break
         return self._books_ids
+
+    def get_book_editions_id(self, book_id):
+        self.br.open("/book/show/", book_id)
+        return self.br.editions_id() or ''
+
+    def get_book_edition_by_language(self, editions_id, lang):
+        self.br.open_book_editions(editions_id)
+        soup = BeautifulSoup(self.br.page_source, "lxml").find(class_="workEditions")
+        if not soup: return None
+        editions = []
+        for details in soup.find_all(class_="editionData"):
+            language, rating = [row.find(class_="dataValue") for row in details.find_all(class_="dataRow")[-3:-1]]
+            if language.text.strip() == lang:
+                reviewers = int(''.join(d for d in rating.find("span").text if d.isdigit()))
+                if reviewers > 50:
+                    editions.append(id_from_url.match(details.find(class_="bookTitle")["href"]).group(1))
+        return ','.join(editions)
 
     # Main function to scrape lists ids
     def _get_lists(self, keyword):
@@ -94,7 +135,3 @@ class Books:
             if id_ not in array:
                 array.append(id_)
                 print(f"{title_of.capitalize()} {id_:<10}count:\t{len(array)}")
-
-    def get_book_editions_id(self, book_id):
-        self.br.open("/book/show/", book_id)
-        return self.br.editions_id()
