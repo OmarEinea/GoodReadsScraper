@@ -19,8 +19,7 @@ class SafeThread(Thread):
 
 def read_books(file_name="books"):
     with open(file_name + ".txt") as file:
-        books_ids = file.read().splitlines()
-    return books_ids
+        return file.read().splitlines()
 
 
 def write_books(books_ids, file_name="books"):

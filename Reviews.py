@@ -9,12 +9,12 @@ from Writer import Writer
 
 # A class to Scrape books Reviews from GoodReads.com
 class Reviews:
-    def __init__(self, path=None, lang="ar"):
+    def __init__(self, path=None, lang="ar", edition_reviews=False):
         # Language of reviews to be scraped
         self._lang = lang
         # Instantiate browsing and writing managers
         self.wr = Writer(path) if path else Writer()
-        self.br = Browser()
+        self.br = Browser(edition_reviews)
         # Initialize an empty threads list
         self._threads = []
         # Counter for reviews from different languages
@@ -61,8 +61,7 @@ class Reviews:
             if self.br.are_reviews_loaded():
                 # Scrape loaded book reviews
                 self.run(self._scrape_book_reviews)
-            else:
-                no_next_page = True
+            else: no_next_page = True
         # Wait until all threads are done
         [thread.join() for thread in self._threads]
         # Finalize file name and close it

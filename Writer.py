@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
+from Tools import path as reviews_path
 import codecs, os
 
 
 # A class to Write Books and Reviews from GoodReads.com to files
 class Writer:
-    def __init__(self, path="./BooksReviews/"):
+    def __init__(self, path=reviews_path):
         # File to write book reviews in
         self._file = None
         # Path to write files in

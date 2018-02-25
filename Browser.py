@@ -17,10 +17,11 @@ class Browser(Chrome):
         "args": ["--headless", "--disable-gpu"]
     }}
 
-    def __init__(self):
+    def __init__(self, edition_reviews=False):
         Chrome.__init__(self, desired_capabilities=self.OPTIONS)
         # Set page loading timeout to 30 seconds
         self.set_page_load_timeout(30)
+        self.edition_reviews = edition_reviews
         # Initialize browsing counters
         self.rating = self.sort = self.fails = None
 
@@ -65,7 +66,13 @@ class Browser(Chrome):
             ids[ids.index(book_id)] = url_id
             write_books(ids)
             raise ConnectionResetError(f"Redirect book id from {book_id} to {url_id}")
-        print(f"Rating: {self.rating} Stars, Sorted: {self._SORTS[self.sort].capitalize()}")
+        # If only this editions's reviews are required
+        if self.edition_reviews:
+            # Make sure to load them before scraping first page
+            self.switch_reviews_mode(book_id, same_mode=True)
+            self.are_reviews_loaded()
+        # Otherwise continue as normal
+        else: print(f"Rating: {self.rating} Stars, Sorted: {self._SORTS[self.sort].capitalize()}")
 
     # Shortcut to open GoodReads books list or shelf
     def open_page(self, keyword, browse):
@@ -93,8 +100,9 @@ class Browser(Chrome):
             print(error)
             return None
 
-    def switch_reviews_mode(self, book_id, only_default=False):
-        self.sort += 1
+    def switch_reviews_mode(self, book_id, only_default=False, same_mode=False):
+        if not same_mode:
+            self.sort += 1
         if self.sort > 2 or only_default:
             self.sort = 0
             self.rating -= 1
@@ -102,12 +110,13 @@ class Browser(Chrome):
                 return False
         print(f"Rating: {self.rating} Stars, Sorted: {self._SORTS[self.sort].capitalize()}")
         self.execute_script(
-            'document.getElementById("reviews").insertAdjacentHTML("beforeend", \'<a class="actionLinkLite'
-            ' loadingLink" rel="nofollow" data-keep-on-success="true" data-remote="true" id="switch"'
-            f'href="/book/reviews/{book_id}?text_only=true&rating={self.rating}&sort={self._SORTS[self.sort]}">'
-            'Switch Mode</a>\');'
+            'document.getElementById("reviews").insertAdjacentHTML("beforeend", \'<a data-remote="true" rel="nofollow"'
+            f'class="actionLinkLite loadingLink" data-keep-on-success="true" id="switch{self.rating}{self.sort}"' +
+            f'href="/book/reviews/{book_id}?text_only=true&rating={self.rating}&sort={self._SORTS[self.sort]}' +
+            ('&edition_reviews=true' if self.edition_reviews else '') + '">Switch Mode</a>\');' +
+            f'document.getElementById("switch{self.rating}{self.sort}").click()'
         )
-        self.find_element_by_id("switch").click()
+        # self.find_element_by_id(f"switch{self.rating}{self.sort}").click()
         return True
 
     # Return whether reviews were loaded
@@ -118,17 +127,17 @@ class Browser(Chrome):
                 'insertAdjacentHTML("beforeend", \'<p id="load_reviews">loading</p>\');'
             )
             # Let the driver wait until the the dummy tag has disappeared
-            WebDriverWait(self, 15).until(ec.invisibility_of_element_located((By.ID, "load_reviews")))
+            WebDriverWait(self, 12).until(ec.invisibility_of_element_located((By.ID, "load_reviews")))
             self.fails = 0
             # Return true if reviews are loaded and they're more that 0, otherwise return false
             return len(self.find_element_by_id("bookReviews").find_elements_by_class_name("review")) > 0
-        except Exception as error:
+        except TimeoutException as error:
             print("Error:", error)
-            # If reviews loading fails 3 times, raise an error
             self.fails += 1
-            if self.fails == 3:
+            # If reviews loading fails 3 times, raise an error
+            if not self.edition_reviews and self.fails == 3:
                 raise ConnectionError
-            return False
+        return False
 
     # Get all links in page that has css class "XTitle"
     def titles_links(self, title):
