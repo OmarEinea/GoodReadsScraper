@@ -18,8 +18,12 @@ class SafeThread(Thread):
 
 
 def read_books(file_name="books"):
-    with open(file_name + ".txt") as file:
-        return file.read().splitlines()
+    try:  # Try reading the file
+        with open(file_name + ".txt") as file:
+            return file.read().splitlines()
+    # If it's not there, return an empty list
+    except FileNotFoundError:
+        return []
 
 
 def write_books(books_ids, file_name="books"):

@@ -44,7 +44,7 @@ class Books:
             # Write editions id to file if it loads correctly
             self.wr.write(editions_id or "-"*7)
             # Display book id and editions id
-            print(f"Book ID:\t{book_id:<15}Book Editions ID:\t{editions_id}")
+            print(f"Book ID:\t{book_id:<15}Book Editions ID:\t{editions_id or ''}")
         self.wr.close()
         return True
 
@@ -58,7 +58,7 @@ class Books:
             # Write editions id to file if it loads correctly
             self.wr.write(books_ids or "-"*7)
             # Display book id and editions id
-            print(f"Book Editions ID:\t{editions_id:<15}Books IDs:\t{books_ids}")
+            print(f"Book Editions ID:\t{editions_id:<15}Books IDs:\t{books_ids or ''}")
         self.wr.close()
         # Open a new file to move done list to it
         self.wr.open(file_name + "_list")
@@ -82,20 +82,22 @@ class Books:
         # Otherwise, it's a single "list" or "shelf"
         else:
             keywords = [keyword]
-        # Loop through all lists
-        for keyword in keywords:
-            # Open each list url
-            self.br.open_page(keyword, browse)
-            # Scrape pages until there's no next page
-            while True:
-                self._scrape_list("book", self._books_ids)
-                if not self.br.goto_next_page():
-                    break
-        return self._books_ids
+        try:
+            # Loop through all lists
+            for keyword in keywords:
+                # Open each list url
+                self.br.open_page(keyword, browse)
+                # Scrape pages until there's no next page
+                while True:
+                    self._scrape_list("book", self._books_ids)
+                    if not self.br.goto_next_page():
+                        break
+        finally:
+            return self._books_ids
 
     def get_book_editions_id(self, book_id):
         self.br.open("/book/show/", book_id)
-        return self.br.editions_id() or ''
+        return self.br.editions_id()
 
     def get_book_edition_by_language(self, editions_id, lang):
         self.br.open_book_editions(editions_id)

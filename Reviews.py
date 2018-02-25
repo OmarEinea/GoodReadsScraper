@@ -47,23 +47,24 @@ class Reviews:
         # Scrape first page of the book anyway
         self.run(self._scrape_book_reviews)
         no_next_page = False
-        # Scrape the remaining pages
-        while self._invalid < 60:
-            # Go to next page if there's one
-            in_next_page = self.br.goto_next_page()
-            if no_next_page or not in_next_page:
-                no_next_page = False
-                # Switch to a different reviews mode
-                if not self.br.switch_reviews_mode(book_id, in_next_page is None):
-                    # Break after switching to all modes
-                    break
-            # Wait until requested book reviews are loaded
-            if self.br.are_reviews_loaded():
-                # Scrape loaded book reviews
-                self.run(self._scrape_book_reviews)
-            else: no_next_page = True
-        # Wait until all threads are done
-        [thread.join() for thread in self._threads]
+        try:  # Scrape the remaining pages
+            while self._invalid < 60:
+                # Go to next page if there's one
+                in_next_page = self.br.goto_next_page()
+                if no_next_page or not in_next_page:
+                    no_next_page = False
+                    # Switch to a different reviews mode
+                    if not self.br.switch_reviews_mode(book_id, in_next_page is None):
+                        # Break after switching to all modes
+                        break
+                # Wait until requested book reviews are loaded
+                if self.br.are_reviews_loaded():
+                    # Scrape loaded book reviews
+                    self.run(self._scrape_book_reviews)
+                else: no_next_page = True
+        finally:
+            # Wait until all threads are done
+            [thread.join() for thread in self._threads]
         # Finalize file name and close it
         self.wr.close_book_file()
 
@@ -132,10 +133,14 @@ class Reviews:
         self._threads.append(SafeThread(target=method, args=[self.br.page_source] + args))
         self._threads[-1].start()
 
+    def reset(self):
+        self.stop()
+        self.start()
+        print("Restarted Reviews")
+
     def stop(self):
         self.br.close()
         self.wr.delete_file()
-        print("Stopped Reviews")
 
     def close(self):
         self.br.quit()

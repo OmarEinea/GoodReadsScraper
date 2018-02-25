@@ -5,7 +5,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, StaleElementReferenceException
 from Tools import write_books, read_books, id_from_url
 
 
@@ -47,7 +47,7 @@ class Browser(Chrome):
                 break
             # On connection timeout, loop again
             except TimeoutException:
-                print("Reloading page")
+                print("Reloading page...")
 
     def open_book_editions(self, book_id):
         self.open(f"/work/editions/{book_id}?expanded=true&sort=title")
@@ -86,8 +86,7 @@ class Browser(Chrome):
 
     # Check if there's a next page
     def goto_next_page(self):
-        try:
-            # Try to find the next button
+        try:  # Try to find the next button
             next_page = self.find_element_by_class_name("next_page")
             # Check if button is click-able (i.e. it's anchor tag)
             if next_page.tag_name == "a":
@@ -95,9 +94,13 @@ class Browser(Chrome):
                 next_page.click()
                 return True
             return False
+        except StaleElementReferenceException:
+            print("WARNING: Retrying to goto next page!")
+            self.implicitly_wait(1)
+            return self.goto_next_page()
         # Return none if there isn't one
-        except Exception as error:
-            print(error)
+        except NoSuchElementException:
+            print("WARNING: There is no next page!")
             return None
 
     def switch_reviews_mode(self, book_id, only_default=False, same_mode=False):
@@ -131,8 +134,8 @@ class Browser(Chrome):
             self.fails = 0
             # Return true if reviews are loaded and they're more that 0, otherwise return false
             return len(self.find_element_by_id("bookReviews").find_elements_by_class_name("review")) > 0
-        except TimeoutException as error:
-            print("Error:", error)
+        except (TimeoutException, StaleElementReferenceException):
+            print("WARNING: Reviews Loading Timeout!")
             self.fails += 1
             # If reviews loading fails 3 times, raise an error
             if not self.edition_reviews and self.fails == 3:
@@ -146,7 +149,7 @@ class Browser(Chrome):
     def editions_id(self):
         try:  # To find a the parent tag (to check whether page loaded)
             editions = self.find_element_by_class_name("otherEditions")
-        except NoSuchElementException:
+        except (NoSuchElementException, TimeoutException):
             return None
         try:  # To find child link tag (to check whether it has other editions)
             return id_from_url.match(
