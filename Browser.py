@@ -5,7 +5,9 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, StaleElementReferenceException
+from selenium.common.exceptions import (
+    TimeoutException, NoSuchElementException, StaleElementReferenceException, WebDriverException
+)
 from Tools import write_books, read_books, id_from_url
 
 
@@ -94,14 +96,14 @@ class Browser(Chrome):
                 next_page.click()
                 return True
             return False
-        except StaleElementReferenceException:
-            print("WARNING: Retrying to goto next page!")
-            self.implicitly_wait(1)
-            return self.goto_next_page()
         # Return none if there isn't one
         except NoSuchElementException:
             print("WARNING: There is no next page!")
             return None
+        except WebDriverException:
+            print("WARNING: Retrying to goto next page!")
+            self.implicitly_wait(1)
+            return self.goto_next_page()
 
     def switch_reviews_mode(self, book_id, only_default=False, same_mode=False):
         if not same_mode:
@@ -141,10 +143,6 @@ class Browser(Chrome):
             if not self.edition_reviews and self.fails == 3:
                 raise ConnectionError
         return False
-
-    # Get all links in page that has css class "XTitle"
-    def titles_links(self, title):
-        return self.find_elements_by_class_name(title + "Title")
 
     def editions_id(self):
         try:  # To find a the parent tag (to check whether page loaded)

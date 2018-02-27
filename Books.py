@@ -3,13 +3,14 @@
 # import needed libraries
 from Writer import Writer
 from Browser import Browser
-from Tools import id_from_url, read_books
 from bs4 import BeautifulSoup
+from Tools import id_from_url, read_books, get_digits
 
 
 # A class to Search then Scrape lists and books from GoodReads.com
 class Books:
-    def __init__(self, path=None):
+    def __init__(self, path=None, arabic=True):
+        self.arabic = arabic
         # Browsing and writing managers
         self.br = Browser()
         self.wr = Writer(path) if path else Writer()
@@ -34,10 +35,10 @@ class Books:
             self.wr.write(book_id)
         self.wr.close()
 
-    def output_books_editions(self, books_ids=None, file_name="editions"):
+    def output_books_editions(self, books_ids=None, skip=0, file_name="editions"):
         self.wr.open(file_name, "a+")
         # Loop through book ids and write their editions id
-        for book_id in books_ids or self._books_ids:
+        for book_id in books_ids[skip:] or self._books_ids[skip:]:
             editions_id = self.get_book_editions_id(book_id)
             # Editions id is None when page refuses to load
             if editions_id is None: return self.wr.close()
@@ -48,10 +49,10 @@ class Books:
         self.wr.close()
         return True
 
-    def output_books_edition_by_language(self, editions_ids, lang="Arabic", file_name="ara_books"):
+    def output_books_edition_by_language(self, editions_ids, skip=0, lang="Arabic", file_name="ara_books"):
         self.wr.open(file_name, "a+")
         # Loop through book ids and write their editions id
-        for editions_id in editions_ids:
+        for editions_id in editions_ids[skip:]:
             books_ids = self.get_book_edition_by_language(editions_id, lang) if editions_id.isdigit() else ''
             # Editions id is None when page refuses to load
             if books_ids is None: return self.wr.close()
@@ -73,15 +74,16 @@ class Books:
 
     # Main function to scrape books ids
     def get_books(self, keyword, browse="list"):
-        # Replace spaces with '+' for a valid url
-        keyword = str(keyword).replace(' ', '+')
         # Get lists in search list if searching
         if browse == "lists":
-            keywords = self._get_lists(keyword)
+            keywords = self._get_lists(keyword.replace(' ', '+'))
             browse = "list"
         # Otherwise, it's a single "list" or "shelf"
         else:
-            keywords = [keyword]
+            keywords = [
+                str(key) for key in (
+                    keyword if isinstance(keyword, list) else [keyword]
+                )]
         try:
             # Loop through all lists
             for keyword in keywords:
@@ -92,6 +94,8 @@ class Books:
                     self._scrape_list("book", self._books_ids)
                     if not self.br.goto_next_page():
                         break
+        except Exception as e:
+            print("Couldn't go to next page:", e)
         finally:
             return self._books_ids
 
@@ -107,7 +111,7 @@ class Books:
         for details in soup.find_all(class_="editionData"):
             language, rating = [row.find(class_="dataValue") for row in details.find_all(class_="dataRow")[-3:-1]]
             if language.text.strip() == lang:
-                reviewers = int(''.join(d for d in rating.find("span").text if d.isdigit()))
+                reviewers = get_digits(rating.find("span").text)
                 if reviewers > 50:
                     editions.append(id_from_url.match(details.find(class_="bookTitle")["href"]).group(1))
         return ','.join(editions)
@@ -126,14 +130,17 @@ class Books:
         return lists
 
     # Scrape a single search results page
-    def _scrape_list(self, title_of, array):
-        # Loop through all link that start with sub_url
-        for link in self.br.titles_links(title_of):
-            try:  # Get id from url
-                id_ = id_from_url.match(link.get_attribute("href")).group(1)
-            except Exception:
-                continue
-            # Extract and store unique id from link
-            if id_ not in array:
-                array.append(id_)
-                print(f"{title_of.capitalize()} {id_:<10}count:\t{len(array)}")
+    def _scrape_list(self, title, array):
+        soup = BeautifulSoup(self.br.page_source, "lxml").find(class_="tableList")
+        if not soup: return None
+        for book in soup.find_all("tr"):
+            if self.arabic or get_digits(book.find(class_="minirating").text.split("—")[1]) > 1000:
+                try:  # Get id from url
+                    id_ = id_from_url.match(book.find(class_=title + "Title")["href"]).group(1)
+                except Exception:
+                    print("Couldn't extract Book Id from URL")
+                    continue
+                # Extract and store unique id from link
+                if id_ not in array:
+                    array.append(id_)
+                    print(f"{title.capitalize()} {id_:<10}count:\t{len(array)}")

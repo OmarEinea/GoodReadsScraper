@@ -31,11 +31,25 @@ def write_books(books_ids, file_name="books"):
         file.write("\n".join(books_ids))
 
 
+def combine_files(output, *files, **options):
+    ids = set()
+    add_id = ids.add
+    intersection = options.get("intersection")
+    write = open(output, 'w+', encoding='utf-8').write
+    for index, file in enumerate(files[::-1]):
+        for line in open(file, encoding='utf-8').readlines():
+            id_ = line.split('\t', 1)[0]
+            if id_ not in ids:
+                add_id(id_)
+                if not intersection or index > 0:
+                    write(line)
+
+
 # Combine all scraped reviews in one file
-def combine_reviews():
+def combine_reviews(path=path):
     # Declare arrays and pointers to their add functions
-    files, ids, bodies = [], set(), set()
-    append, add_id, add_body = files.append, ids.add, bodies.add
+    files, ids = [], set()
+    append, add_id = files.append, ids.add
     # Loop through all files in path
     for file in os.listdir(path):
         # If file is complete
@@ -44,9 +58,9 @@ def combine_reviews():
             lines = open(path + file, encoding='utf-8').readlines()
             append((len(lines) - 1, lines))
     # Combine books titles in this file
-    write_books = open(path + "books.csv", "w+", encoding='utf-8').write
+    write_book = open(path + "books.csv", "w+", encoding='utf-8').write
     # Combine reviews in this file
-    write_reviews = open(path + "reviews.csv", "w+", encoding='utf-8').write
+    write_review = open(path + "reviews.csv", "w+", encoding='utf-8').write
     # Sort files from largest to smallest and loop through them
     for file in sorted(files, reverse=True):
         reviews = file[1]
@@ -59,7 +73,7 @@ def combine_reviews():
                 book_index = i
         # Copy book description line index and write it to books.csv
         book = reviews[book_index][:]
-        write_books('\t'.join(book))
+        write_book('\t'.join(book))
         # Split the rest of its cells
         book[2:] = book[2].split('\t')
         book_id, author_id = book[0], book[3]
@@ -72,7 +86,7 @@ def combine_reviews():
             if id_ not in ids:
                 # Add it to array and write it to file
                 add_id(id_)
-                write_reviews('\t'.join([id_, review[1], book_id, author_id, review[2].replace("\u2028", ". ")]))
+                write_review('\t'.join([id_, review[1], book_id, author_id, review[2].replace("\u2028", ". ")]))
 
 
 # Split the reviews from one file into n files
@@ -184,3 +198,7 @@ def compare_two_files(file1, file2):
         print("Repeated Reviews:", len(reviews1) + len(reviews2) - len(reviews_ids))
         print("Unique Reviews in First File:", len(reviews_ids) - len(reviews2))
         print("Unique Reviews in Second File:", len(reviews_ids) - len(reviews1))
+
+
+def get_digits(text):
+    return int(''.join(char for char in text if char.isdigit()))
