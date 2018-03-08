@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# from Books import Books
+from Books import Books
 from Reviews import Reviews
 from Tools import read_books
 from time import sleep
@@ -9,29 +9,25 @@ from time import sleep
 if __name__ == '__main__':
 
     # >>> Create books object and get all books shelved as "arabic"
-    # b = Books()
-    # b.output_books("arabic", "shelf", file_name="books")
-
+    b = Books(arabic=False)
+    # b.append_books(read_books())
+    b.output_books(2522)
+    while not b.output_books_editions(read_books(), file_name="editions"):
+        print("Refreshing after a while")
+        sleep(50)
+    while not b.output_books_edition_by_language(read_books("editions"), file_name="ara_books"):
+        print("Refreshing after a while")
+        sleep(50)
     # >>> Create Reviews object and scrape all reviews from the books list
-    r = Reviews()
-    count = 0
+    r = Reviews(edition_reviews=True)
     while True:
         try:
-            r.output_books_reviews(read_books())
+            r.output_books_reviews(read_books("ara_books_list"))
             break
-        # If connection is stuck, refresh reviews object
-        except (AttributeError, ConnectionError, PermissionError) as e:
-            print("Resetting Reviews object because:", e)
-            r.stop()
-            count += 1
-            # Every three times this happens, wait a bit
-            if count % 3 == 0:
-                sleep(120)
-            r.start()
         # If an error occurs
         except Exception as e:
-            print("Error:", str(e))
-
+            print("ERROR:", str(e))
+            r.reset()
     r.close()
     print("Done!")
     # delete_repeated_reviews()

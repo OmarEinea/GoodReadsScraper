@@ -35,7 +35,8 @@ class Books:
             self.wr.write(book_id)
         self.wr.close()
 
-    def output_books_editions(self, books_ids=None, skip=0, file_name="editions"):
+    def output_books_editions(self, books_ids=None, file_name="editions"):
+        skip = len(read_books(file_name))
         self.wr.open(file_name, "a+")
         # Loop through book ids and write their editions id
         for book_id in books_ids[skip:] or self._books_ids[skip:]:
@@ -49,7 +50,8 @@ class Books:
         self.wr.close()
         return True
 
-    def output_books_edition_by_language(self, editions_ids, skip=0, lang="Arabic", file_name="ara_books"):
+    def output_books_edition_by_language(self, editions_ids, lang="Arabic", file_name="ara_books"):
+        skip = len(read_books(file_name))
         self.wr.open(file_name, "a+")
         # Loop through book ids and write their editions id
         for editions_id in editions_ids[skip:]:

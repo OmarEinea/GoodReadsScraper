@@ -126,61 +126,6 @@ def count_files_lines(from_file=None):
     return total
 
 
-# Delete all repeated reviews
-def delete_repeated_reviews():
-    repeated = 0
-    invalid = 0
-    ids = set()
-    add_id = ids.add
-    reviews = set()
-    add_rev = reviews.add
-    # Loop through all files in path
-    for file in os.listdir(path):
-        dir_ = path + file
-        # Only count completed files
-        if file[0] == 'C':
-            # Read file lines and store them
-            f = open(dir_, 'r')
-            lines = f.readlines()
-            f.close()
-            # Write lines to the same file after erasing it
-            f = open(dir_, 'w')
-            f_write = f.write
-            f_write(lines[0])
-            # Loop through all reviews lines
-            for line in lines[1:]:
-                # Get line cells
-                cells = line.split('\t')
-                if len(cells) != 5:
-                    invalid += 1
-                    continue
-                # Store id
-                id_ = cells[0]
-                # Review here is "date <tab> rating <tab> text"
-                review = '\t'.join(cells[2:])
-                # If id isn't repeated
-                if id_ not in ids:
-                    # Add it to array and write it to file
-                    add_id(id_)
-                    if review not in reviews:
-                        add_rev(review)
-                        f_write(line.replace("\u2028", ". "))
-                # If it's repeated, count it
-                else:
-                    repeated += 1
-            f.close()
-            # If some files became empty after deleting
-            if len(open(dir_, 'r').readlines()) < 2:
-                # Rename file from "C_" to "E_"
-                os.rename(dir_, path + "E_" + file[2:])
-    # Display counts and return all reviews ids
-    print("Total Non-Repeated:\t" + str(len(reviews)))
-    print("Total Invalid By Cells:\t" + str(invalid))
-    print("Total Repeated By ID:\t" + str(repeated))
-    print("Total Repeated By Text:\t" + str(len(ids) - len(reviews)))
-    return ids
-
-
 def get_empty_files():
     write_empty = open("empty.txt", "w+").write
     for file in os.listdir(path):
@@ -202,3 +147,21 @@ def compare_two_files(file1, file2):
 
 def get_digits(text):
     return int(''.join(char for char in text if char.isdigit()))
+
+
+def fix_invalid_tabs(file):
+    lines = open(file, encoding="utf-8").readlines()
+    write = open("fixed_" + file, "w+", encoding="utf-8").write
+    for line in lines:
+        parts = line.split('\t')
+        if len(parts) >= 7:
+            write('\t'.join(parts[:6] + [' '.join(parts[6:])]))
+
+
+def count_invalid(file):
+    count = 0
+    for line in open(file, encoding="utf-8").readlines():
+        length = len(line.split('\t'))
+        if length != 7:
+            print(length)
+    print("Number of invalid reviews:", count)
