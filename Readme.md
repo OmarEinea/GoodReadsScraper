@@ -1,15 +1,17 @@
 # GoodReads Reviews Scraper
 
-This is a python 3 web scraping script to get books reviews from goodreads.com,				<br>
-using the web browser automation tool Selenium, and BeautifulSoup for pulling data out of HTML.
+This is a python 3 web scraping script to get books reviews from goodreads.com,<br>
+using the web browser automation tool Selenium, and BeautifulSoup for pulling data out of HTML.<br>
+I used it to scrape around 700k Arabic reviews in 2018 (Arabic reviews are fewer than English ones).
 
 ### Contents
 
+- Analyzer.py: A short script to display some statistics about scraped books reviews
 - Books.py: A class to scrape books ids from goodreads list or lists search or shelf
+- Browser.py: A subclass of Chrome WebDriver class that's specialized for GoodrReads browsing
 - Reviews.py: A class to scrape reviews from goodreads books using books ids
-- Manager.py: A set of methods for managing output reviews from files
 - Sample.py: A sample script showing a complete use of the scraper with error handling
-- Browser.py: A subclass of PhantomJS driver class that's specialized for goodreads browsing
+- Tools.py: A set of function tools that are used in other scripts
 - Writer.py: A class to write scraped reviews to files
 - requirements.txt: A list of Required Python modules to be installed
 
@@ -19,11 +21,9 @@ To install requirements listed in requirements.txt, you'll need to run this (dep
 ```bash
 pip install -r requirements.txt
 ```
-Also, as this is using Selenium, you'll need to download its driver for your specific os,	<br>
-so ether download [PhantomJS](http://phantomjs.org/download.html) (no GUI) or [Chrome](https://sites.google.com/a/chromium.org/chromedriver/downloads) (plugin to use your Chrome browser)
-
-It's up to you which one you choose, though if you choose Chrome you'll need to				<br>
-uncomment the tipple quotations at the top of the Browser.py file.
+Also, as this is using Selenium to control the Chrome Browser,<br>
+so you'll need to download its driver for your specific os from
+[here](https://sites.google.com/a/chromium.org/chromedriver/downloads).
 
 ### Documentation
 
@@ -67,7 +67,7 @@ uncomment the tipple quotations at the top of the Browser.py file.
 	- Reviews.wr.read_books(file_name="books")												<br>
 	Reads books ids from file and returns them.
 
-- Manager module methods:
+- Tools module methods:
 	- Manager.count_files_lines()															<br>
 	Returns and prints the total sum of scraped books lines
 
@@ -114,7 +114,6 @@ combine_reviews()
 ### Resources
 
 > - [Selenium](http://www.seleniumhq.org/)
-> - [PhantomJS](http://phantomjs.org/)
 > - [LangDetect](https://github.com/Mimino666/langdetect)
 > - [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)
 
@@ -128,6 +127,7 @@ University of Sharjah, United Arab Emarites, July 2016
 
 ### License
 
-Copyright (C) 2016 by Omar Einea.
+Copyright (C) 2018 by Omar Einea.
 
-This is an open source tool licensed under GPL v3.0. Copy of the license can be found [here](https://github.com/OmarEinea/GoodReads/blob/master/LICENSE.md).
+This is an open source tool licensed under GPL v3.0. Copy of the license can be found
+[here](https://github.com/OmarEinea/GoodReads/blob/master/LICENSE.md).
