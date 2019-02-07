@@ -92,12 +92,12 @@ def combine_reviews(path=path):
 # Split the reviews from one file into n files
 def split_reviews(n):
     # Store lines from reviews file
-    lines = open("reviews.csv", 'r').readlines()
+    lines = open("reviews.csv", encoding="utf-8").readlines()
     # Make n number of steps in loop
     n = int(len(lines) / n)
     # Loop n times
     for i in range(0, len(lines), n):
-        write = open("reviews" + str(int(i / n + 1)) + ".csv", "w+").write
+        write = open("reviews" + str(int(i / n + 1)) + ".csv", "w+", encoding="utf-8").write
         # Loop through chunks of reviews file
         for line in lines[i:i + n]:
             write(line)
@@ -151,11 +151,15 @@ def get_digits(text):
 
 def fix_invalid_tabs(file):
     lines = open(file, encoding="utf-8").readlines()
-    write = open("fixed_" + file, "w+", encoding="utf-8").write
+    write = open(file[:-4] + "_fixed" + file[-4:], "w+", encoding="utf-8").write
+    count = 0
     for line in lines:
         parts = line.split('\t')
         if len(parts) >= 7:
             write('\t'.join(parts[:6] + [' '.join(parts[6:])]))
+            if len(parts) > 7:
+                count += 1
+    print("Fixed", count, "reviews")
 
 
 def count_invalid(file):
