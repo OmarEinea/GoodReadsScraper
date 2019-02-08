@@ -1,19 +1,17 @@
 #
-# Igonre all interpreted python byte code
-#
-*.pyc
-
-#
 # Igonre all reviews output files and folder
 #
 *.csv
+lists/
+reviews/
 *Reviews/
 Dialects/
 
 #
-# Ignore PyCharm IDE project folder
+# Ignore PyCharm and Python folders
 #
-.idea
+.idea/
+__pycache__/
 
 #
 # Ignore Chrome Driver
