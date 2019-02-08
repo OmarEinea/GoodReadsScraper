@@ -2,18 +2,18 @@
 
 This is a python 3 web scraping script to get books reviews from goodreads.com,<br>
 using the web browser automation tool Selenium, and BeautifulSoup for pulling data out of HTML.<br>
-I used it to scrape around 700k Arabic reviews in 2018 (Arabic reviews are fewer than English ones).
-
+I used it to scrape around 700k Arabic reviews in 2018 (Arabic reviews are fewer than English ones).<br>
+We experimented on the collected data and published the results in a conference paper [[link](https://ieeexplore.ieee.org/abstract/document/7945800)].
 ### Contents
 
-- Analyzer.py: A short script to display some statistics about scraped books reviews
-- Books.py: A class to scrape books ids from goodreads list or lists search or shelf
-- Browser.py: A subclass of Chrome WebDriver class that's specialized for GoodrReads browsing
-- Reviews.py: A class to scrape reviews from goodreads books using books ids
-- Sample.py: A sample script showing a complete use of the scraper with error handling
-- Tools.py: A set of function tools that are used in other scripts
-- Writer.py: A class to write scraped reviews to files
-- requirements.txt: A list of Required Python modules to be installed
+- Analyzer.py: short script to display some statistics about scraped books reviews
+- Books.py: class to scrape books ids from goodreads list or lists search or shelf
+- Browser.py: subclass of Chrome WebDriver class that's specialized for GoodrReads browsing
+- Reviews.py: class to scrape reviews from goodreads books using books ids
+- Sample.py: sample script showing a complete use of the scraper with error handling
+- Tools.py: set of function tools that are used in other scripts
+- Writer.py: class to write scraped reviews to files
+- requirements.txt: list of Required Python modules to be installed
 
 ### Requirements
 
@@ -127,7 +127,7 @@ University of Sharjah, United Arab Emarites, July 2016
 
 ### License
 
-Copyright (C) 2018 by Omar Einea.
+Copyright (C) 2019 by Omar Einea.
 
 This is an open source tool licensed under GPL v3.0. Copy of the license can be found
 [here](https://github.com/OmarEinea/GoodReads/blob/master/LICENSE.md).
