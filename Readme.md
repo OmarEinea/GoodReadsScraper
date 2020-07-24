@@ -3,7 +3,12 @@
 This is a python 3 web scraping script to get books reviews from goodreads.com,<br>
 using the web browser automation tool Selenium, and BeautifulSoup for pulling data out of HTML.<br>
 I used it to scrape around 700k Arabic reviews in 2018 (Arabic reviews are fewer than English ones).<br>
-We experimented on the collected data and published the results in a conference paper [[link](https://ieeexplore.ieee.org/abstract/document/7945800)].
+
+### Papers
+We experimented on the collected data and published details about it in two research papers:
+- [BRAD 1.0: Book reviews in Arabic dataset (IEEE)](https://ieeexplore.ieee.org/abstract/document/7945800).
+- [An Annotated Huge Dataset for Standard and Colloquial Arabic Reviews for Subjective Sentiment Analysis (Elsevier)](https://www.sciencedirect.com/science/article/pii/S1877050918321781).
+
 ### Contents
 
 - Analyzer.py: short script to display some statistics about scraped books reviews
