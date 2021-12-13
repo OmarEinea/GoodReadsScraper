@@ -1,4 +1,4 @@
 beautifulsoup4==4.7.1
 langdetect==1.0.7
 selenium==3.141.0
-lxml==4.6.2
+lxml==4.6.5
